@@ -7,7 +7,6 @@ The Backend of Nuber Eats Clone
 - id
 - createdAt
 - updatedAt
-
 - email
 - password
 - role(client|owner|deliver)
