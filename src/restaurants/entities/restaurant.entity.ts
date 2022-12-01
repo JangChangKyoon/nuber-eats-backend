@@ -2,7 +2,7 @@ import { Field, InputType, ObjectType } from '@nestjs/graphql';
 import { IsBoolean, IsString, Length, IsOptional } from 'class-validator';
 import { Column, Entity, PrimaryGeneratedColumn, BaseEntity } from 'typeorm';
 
-@InputType({ isAbstract: true }) // this Inputtype is not conclude in schema
+@InputType({ isAbstract: true }) // this Inputtype is not include in schema
 @ObjectType()
 @Entity()
 export class Restaurant extends BaseEntity {
