@@ -1,6 +1,11 @@
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ConfigModule } from '@nestjs/config';
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as Joi from 'joi';
@@ -11,6 +16,7 @@ import { User } from './users/entities/user.entity';
 import { JwtModule } from './jwt/jwt.module';
 import { CommonModule } from './common/common.module';
 import { UsersModule } from './users/users.module';
+import { jwtMiddleware } from './jwt/jwt.middleware';
 
 @Module({
   imports: [
@@ -29,7 +35,7 @@ import { UsersModule } from './users/users.module';
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_NAME: Joi.string().required(),
-        SECRET_KEY: Joi.string().required(),
+        PRIVATE_KEY: Joi.string().required(),
       }),
     }),
     // DB세팅
@@ -49,9 +55,11 @@ import { UsersModule } from './users/users.module';
       driver: ApolloDriver,
       autoSchemaFile: true, // 메모리에 저장 //join(process.cwd(), 'src/schema.gql'),// 경로에 저장
     }),
+    JwtModule.forRoot({
+      privateKey: process.env.PRIVATE_KEY,
+    }), // Dynamic Module : 설정이 적용되어 있거나 설정을 적용할 수 있는 모듈
     UsersModule, // static module : 어떠한 설정도 적용되어 있지 않은 모듈
     CommonModule,
-    JwtModule, // Dynamic Module : 설정이 적용되어 있거나 설정을 적용할 수 있는 모듈
   ],
   controllers: [],
   providers: [],
