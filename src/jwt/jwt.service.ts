@@ -10,7 +10,15 @@ export class JwtService {
   ) {
     console.log(options); // inject test
   }
+
+  // excuted in usersService
   sign(userId: number): string {
     return jwt.sign({ id: userId }, this.options.privateKey);
+  }
+
+  // configure verify
+  // excuted in jwt.middleware
+  verify(token: string) {
+    return jwt.verify(token, this.options.privateKey);
   }
 }
