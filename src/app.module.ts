@@ -17,6 +17,7 @@ import { JwtModule } from './jwt/jwt.module';
 import { CommonModule } from './common/common.module';
 import { UsersModule } from './users/users.module';
 import { JwtMiddleware } from './jwt/jwt.middleware';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -59,8 +60,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
     }), // Dynamic Module : 설정이 적용되어 있거나 설정을 적용할 수 있는 모듈
-    UsersModule, // static module : 어떠한 설정도 적용되어 있지 않은 모듈
-    CommonModule,
+    UsersModule, AuthModule, // static module : 어떠한 설정도 적용되어 있지 않은 모듈
   ],
   controllers: [],
   providers: [],
