@@ -7,6 +7,7 @@ import { LoginInput } from './dtos/login.dto';
 import { User } from './entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from 'src/jwt/jwt.service';
+import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 
 @Injectable()
 export class UsersService {
@@ -77,5 +78,24 @@ export class UsersService {
 
   async findById(id: number) {
     return this.users.findOne({ where: { id } });
+  }
+
+  // user.entity의 @BeforeUpdate 오류 발생
+  // async editProfile(userId: number, editProfileInput: EditProfileInput) {
+  //   return this.users.update(userId, { ...editProfileInput });
+  // }
+
+  async editProfile(
+    userId: number,
+    { email, password }: EditProfileInput,
+  ): Promise<User> {
+    const user = await this.users.findOne({ where: { id: userId } });
+    if (email) {
+      user.email = email;
+    }
+    if (password) {
+      user.password = password;
+    }
+    return this.users.save(user);
   }
 }
