@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsEmail, IsEnum } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
+import { boolean, string } from 'joi';
 
 enum UserRole { // for DB
   Client,
@@ -19,7 +20,7 @@ enum UserRole { // for DB
 
 registerEnumType(UserRole, { name: 'UserRole' }); // for gql
 
-@InputType({ isAbstract: true }) // this Inputtype is not include in schema
+@InputType({ isAbstract: true }) // this Inputtype is not included in schema
 @ObjectType() // in gql designates each type with below @Field
 @Entity()
 export class User extends CoreEntity {
@@ -36,6 +37,10 @@ export class User extends CoreEntity {
   @Field((type) => UserRole) //gql with @ObjectType and registerEnumType
   @IsEnum(UserRole)
   role: UserRole;
+
+  @Column({ default: false })
+  @Field((type) => Boolean)
+  verified: boolean;
 
   @BeforeUpdate() // before save by update
   @BeforeInsert() // before save in database

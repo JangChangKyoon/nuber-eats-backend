@@ -18,6 +18,7 @@ import { CommonModule } from './common/common.module';
 import { UsersModule } from './users/users.module';
 import { JwtMiddleware } from './jwt/jwt.middleware';
 import { AuthModule } from './auth/auth.module';
+import { Verification } from './users/entities/verification.entity';
 
 @Module({
   imports: [
@@ -49,7 +50,7 @@ import { AuthModule } from './auth/auth.module';
       database: process.env.DB_NAME,
       synchronize: process.env.NODE_ENV !== 'prod',
       logging: process.env.NODE_ENV !== 'prod',
-      entities: [User],
+      entities: [User, Verification],
     }),
     // GraphQL 설정
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -60,7 +61,8 @@ import { AuthModule } from './auth/auth.module';
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
     }), // Dynamic Module : 설정이 적용되어 있거나 설정을 적용할 수 있는 모듈
-    UsersModule, AuthModule, // static module : 어떠한 설정도 적용되어 있지 않은 모듈
+    UsersModule,
+    AuthModule, // static module : 어떠한 설정도 적용되어 있지 않은 모듈
   ],
   controllers: [],
   providers: [],
