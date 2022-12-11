@@ -4,7 +4,9 @@ import { BeforeInsert, Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 import { User } from './user.entity';
 import { v4 as uuidv4 } from 'uuid';
 
-// Restaurant entity에서 InputType decorator를 명시해주고 isAbstract:true를 해준다. 이는 InputType은 스키마에 포함되지 않고 어딘가에서 복사해서 쓰여짐을 의미한다. 이때 Dto에서 두 번째 인자는 지워준다.
+// Restaurant entity에서 InputType decorator를 명시해주고 isAbstract:true를 해준다.
+// 이는 InputType은 스키마에 포함되지 않고 어딘가에서 복사해서 쓰여짐을 의미한다.
+// 이때 Dto에서 두 번째 인자는 지워준다.
 @InputType({ isAbstract: true })
 @ObjectType()
 @Entity()

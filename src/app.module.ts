@@ -19,6 +19,7 @@ import { UsersModule } from './users/users.module';
 import { JwtMiddleware } from './jwt/jwt.middleware';
 import { AuthModule } from './auth/auth.module';
 import { Verification } from './users/entities/verification.entity';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -38,6 +39,9 @@ import { Verification } from './users/entities/verification.entity';
         DB_PASSWORD: Joi.string().required(),
         DB_NAME: Joi.string().required(),
         PRIVATE_KEY: Joi.string().required(),
+        MAILGUN_API_KEY: Joi.string().required(),
+        MAILGUN_DOMAIN_NAME: Joi.string().required(),
+        MAILGUN_FROM_EMAIL: Joi.string().required(),
       }),
     }),
     // DB세팅
@@ -62,6 +66,11 @@ import { Verification } from './users/entities/verification.entity';
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
     }), // Dynamic Module : 설정이 적용되어 있거나 설정을 적용할 수 있는 모듈
+    MailModule.forRoot({
+      apiKey: process.env.MAILGUN_API_KEY,
+      domain: process.env.MAILGUN_DOMAIN_NAME,
+      fromEmail: process.env.MAILGUN_FROM_EMAIL,
+    }),
     UsersModule,
     AuthModule, // static module : 어떠한 설정도 적용되어 있지 않은 모듈
   ],

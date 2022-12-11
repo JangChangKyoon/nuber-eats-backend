@@ -14,15 +14,17 @@ import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 import { Verification } from './entities/verification.entity';
 import { UserProfileOutput } from './dtos/user-profile.dto';
 import { VerifyEmailOutput } from './dtos/verify-email.dto';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(Verification)
     private readonly verifications: Repository<Verification>,
-    @InjectRepository(User) private readonly users: Repository<User>,
-
+    @InjectRepository(User)
+    private readonly users: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {
     // console.log(this.config.get('SECRET_KEY'));
   }
@@ -48,8 +50,11 @@ export class UsersService {
       const user = await this.users.save(
         this.users.create({ email, password, role }),
       );
-      await this.verifications.save(this.verifications.create({ user }));
+      const verification = await this.verifications.save(
+        this.verifications.create({ user }),
+      );
       // verfication 호출하여 code 인증
+      this.mailService.sendVerificationEmail(user.email, verification.code);
       return { ok: true };
     } catch (e) {
       return { ok: false, error: "Couldn't create account" };
@@ -117,7 +122,10 @@ export class UsersService {
         user.email = email;
 
         user.verified = false;
-        await this.verifications.save(this.verifications.create({ user }));
+        const verification = await this.verifications.save(
+          this.verifications.create({ user }),
+        );
+        this.mailService.sendVerificationEmail(user.email, verification.code);
       }
       if (password) {
         user.password = password;
