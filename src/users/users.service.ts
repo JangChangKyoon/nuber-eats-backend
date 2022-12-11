@@ -55,7 +55,13 @@ export class UsersService {
     password,
   }: LoginInput): Promise<{ ok: boolean; error?: string; token?: string }> {
     try {
-      const user = await this.users.findOne({ where: { email } });
+      const user = await this.users.findOne({
+        where: { email },
+        select: ['id', 'password'],
+        // select: ['password'] : entity에 기본적으로 출력되지 않도록 설정해놓아서(select: false)
+        // 그걸을 무시하고 호출하도록 함
+      });
+      console.log(user);
       if (!user) {
         return {
           ok: false,
@@ -106,5 +112,28 @@ export class UsersService {
       user.password = password;
     }
     return this.users.save(user);
+  }
+
+  async verifyEmail(code: string): Promise<boolean> {
+    try {
+      const verification = await this.verifications.findOne({
+        where: { code },
+        relations: {
+          user: true,
+        },
+      });
+      // console.log(verification);
+      if (verification) {
+        verification.user.verified = true;
+        this.users.save(verification.user);
+        //entity의 BeforeInsert로 한번 더 헤시를 해서 재암호화로 비밀번호 인증에 에러 발생
+
+        return true;
+      }
+      throw new Error();
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
   }
 }

@@ -29,9 +29,12 @@ export class User extends CoreEntity {
   @IsEmail()
   email: string;
 
-  @Column()
+  @Column({ select: false })
   @Field((type) => String) //gql with @ObjectType
   password: string;
+  // select: boolean - Defines whether or not to hide this column by default when making queries.
+  // When set to false, the column data will not show with a standard query.
+  // 이메일 인증할 때 재암호화 방지용
 
   @Column({ type: 'enum', enum: UserRole })
   @Field((type) => UserRole) //gql with @ObjectType and registerEnumType
@@ -45,13 +48,15 @@ export class User extends CoreEntity {
   @BeforeUpdate() // before save by update
   @BeforeInsert() // before save in database
   async hashPassword(): Promise<void> {
-    try {
-      this.password = await bcrypt.hash(this.password, 10);
-      // 10 times hassing
-      console.log('hashPassword');
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException();
+    if (this.password) {
+      try {
+        this.password = await bcrypt.hash(this.password, 10);
+        // 10 times hassing
+        console.log('hashPassword');
+      } catch (e) {
+        console.log(e);
+        throw new InternalServerErrorException();
+      }
     }
   }
 

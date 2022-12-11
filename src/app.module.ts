@@ -41,6 +41,7 @@ import { Verification } from './users/entities/verification.entity';
       }),
     }),
     // DB세팅
+    // import { Verification } from './users/entities/verification.entity';
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -50,7 +51,7 @@ import { Verification } from './users/entities/verification.entity';
       database: process.env.DB_NAME,
       synchronize: process.env.NODE_ENV !== 'prod',
       logging: process.env.NODE_ENV !== 'prod',
-      entities: [User, Verification],
+      entities: [User, Verification], // 데이터베이스가 entity를 인식할 수 있도록 함.
     }),
     // GraphQL 설정
     GraphQLModule.forRoot<ApolloDriverConfig>({

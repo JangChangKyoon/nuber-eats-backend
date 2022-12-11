@@ -11,6 +11,7 @@ import { UseGuards } from '@nestjs/common';
 import { AuthUser } from 'src/auth/auth-user.decorator';
 import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
+import { VerifyEmailInput, VerifyEmailOutput } from './dtos/verify-email.dto';
 
 @Resolver((of) => User)
 export class UsersResolver {
@@ -120,6 +121,20 @@ export class UsersResolver {
         ok: false,
         error,
       };
+    }
+  }
+
+  //import { VerifyEmailInput, VerifyEmailOutput } from './dtos/verify-email.dto';
+  @Mutation((returns) => VerifyEmailOutput)
+  async verifyEmail(
+    @Args('input') { code }: VerifyEmailInput,
+  ): Promise<VerifyEmailOutput> {
+    //  { code } means there is an object that has a prop. called 'code' inside.
+    try {
+      await this.usersService.verifyEmail(code);
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error };
     }
   }
 }
