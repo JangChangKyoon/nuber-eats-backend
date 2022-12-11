@@ -23,40 +23,19 @@ export class UsersResolver {
   }
 
   @Mutation((returns) => CreateAccountOutput)
-  async createAccount(@Args('input') createAccountInput: CreateAccountInput) {
-    console.log('[-------come In resolve_Mutation_createAccount_Args--------]');
-    console.log(createAccountInput.password);
-    console.log(createAccountInput.email);
-    console.log(createAccountInput.role);
-    try {
-      const { ok, error } = await this.usersService.createAccount(
-        createAccountInput,
-      );
-      return {
-        ok,
-        error,
-      };
-      // return this.usersService.createAccount(createAccountInput);
-    } catch (error) {
-      return {
-        error,
-        ok: false,
-      };
-    }
+  createAccount(
+    @Args('input') createAccountInput: CreateAccountInput,
+  ): Promise<CreateAccountOutput> {
+    // console.log('[-------come In resolve_Mutation_createAccount_Args--------]');
+    // console.log(createAccountInput.password);
+    // console.log(createAccountInput.email);
+    // console.log(createAccountInput.role);
+    return this.usersService.createAccount(createAccountInput);
   }
 
   @Mutation((returns) => LoginOutput)
   async login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
-    try {
-      // return this.usersService.login(loginInput);
-      const { ok, error, token } = await this.usersService.login(loginInput);
-      return { ok, error, token };
-    } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
-    }
+    return this.usersService.login(loginInput);
   }
 
   @Query((returns) => User)
@@ -88,21 +67,7 @@ export class UsersResolver {
   async userProfile(
     @Args() userProfileInput: UserProfileInput,
   ): Promise<UserProfileOutput> {
-    try {
-      const user = await this.usersService.findById(userProfileInput.userId);
-      if (!user) {
-        throw Error();
-      }
-      return {
-        ok: true,
-        user,
-      };
-    } catch (e) {
-      return {
-        ok: false,
-        error: 'User Not Found',
-      };
-    }
+    return this.usersService.findById(userProfileInput.userId);
   }
 
   @UseGuards(AuthGuard)
@@ -111,30 +76,15 @@ export class UsersResolver {
     @AuthUser() authUser: User,
     @Args('input') editProfileInput: EditProfileInput,
   ): Promise<EditProfileOutput> {
-    try {
-      await this.usersService.editProfile(authUser.id, editProfileInput);
-      return {
-        ok: true,
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
-    }
+    return this.usersService.editProfile(authUser.id, editProfileInput);
   }
 
   //import { VerifyEmailInput, VerifyEmailOutput } from './dtos/verify-email.dto';
   @Mutation((returns) => VerifyEmailOutput)
-  async verifyEmail(
+  verifyEmail(
     @Args('input') { code }: VerifyEmailInput,
   ): Promise<VerifyEmailOutput> {
     //  { code } means there is an object that has a prop. called 'code' inside.
-    try {
-      await this.usersService.verifyEmail(code);
-      return { ok: true };
-    } catch (error) {
-      return { ok: false, error };
-    }
+    return this.usersService.verifyEmail(code);
   }
 }

@@ -2,13 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
-import { CreateAccountInput } from './dtos/create-account.dto';
-import { LoginInput } from './dtos/login.dto';
+import {
+  CreateAccountInput,
+  CreateAccountOutput,
+} from './dtos/create-account.dto';
+import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { User } from './entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from 'src/jwt/jwt.service';
 import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 import { Verification } from './entities/verification.entity';
+import { UserProfileOutput } from './dtos/user-profile.dto';
+import { VerifyEmailOutput } from './dtos/verify-email.dto';
 
 @Injectable()
 export class UsersService {
@@ -26,17 +31,17 @@ export class UsersService {
     email,
     password,
     role,
-  }: CreateAccountInput): Promise<{ ok: boolean; error?: string }> {
+  }: CreateAccountInput): Promise<CreateAccountOutput> {
     // check new user
-    console.log('[---------service_createAcount start--------]');
-    console.log(password);
+    // console.log('[---------service_createAcount start--------]');
+    // console.log(password);
 
     try {
       const exists = await this.users.findOne({ where: { email } });
-      console.log(exists);
+      // console.log(exists);
       if (exists) {
         // make error
-        console.log('[---------service_createAcount error--------]');
+        // console.log('[---------service_createAcount error--------]');
         return { ok: false, error: 'There is a user with that email already' };
       }
       // await this.users.save(this.users.create({ email, password, role }));
@@ -44,16 +49,14 @@ export class UsersService {
         this.users.create({ email, password, role }),
       );
       await this.verifications.save(this.verifications.create({ user }));
+      // verfication 호출하여 code 인증
       return { ok: true };
     } catch (e) {
       return { ok: false, error: "Couldn't create account" };
     }
   }
 
-  async login({
-    email,
-    password,
-  }: LoginInput): Promise<{ ok: boolean; error?: string; token?: string }> {
+  async login({ email, password }: LoginInput): Promise<LoginOutput> {
     try {
       const user = await this.users.findOne({
         where: { email },
@@ -61,7 +64,7 @@ export class UsersService {
         // select: ['password'] : entity에 기본적으로 출력되지 않도록 설정해놓아서(select: false)
         // 그걸을 무시하고 호출하도록 함
       });
-      console.log(user);
+      // console.log(user);
       if (!user) {
         return {
           ok: false,
@@ -88,8 +91,15 @@ export class UsersService {
     }
   }
 
-  async findById(id: number) {
-    return this.users.findOne({ where: { id } });
+  async findById(id: number): Promise<UserProfileOutput> {
+    try {
+      const user = await this.users.findOne({ where: { id } });
+      if (user) {
+        return { ok: true, user: user };
+      }
+    } catch (error) {
+      return { ok: false, error: 'User Not Found' };
+    }
   }
 
   // user.entity의 @BeforeUpdate 오류 발생
@@ -100,21 +110,28 @@ export class UsersService {
   async editProfile(
     userId: number,
     { email, password }: EditProfileInput,
-  ): Promise<User> {
-    const user = await this.users.findOne({ where: { id: userId } });
-    if (email) {
-      user.email = email;
+  ): Promise<EditProfileOutput> {
+    try {
+      const user = await this.users.findOne({ where: { id: userId } });
+      if (email) {
+        user.email = email;
 
-      user.verified = false;
-      await this.verifications.save(this.verifications.create({ user }));
+        user.verified = false;
+        await this.verifications.save(this.verifications.create({ user }));
+      }
+      if (password) {
+        user.password = password;
+      }
+      await this.users.save(user);
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      return { ok: false, error: 'Could not update profile' };
     }
-    if (password) {
-      user.password = password;
-    }
-    return this.users.save(user);
   }
 
-  async verifyEmail(code: string): Promise<boolean> {
+  async verifyEmail(code: string): Promise<VerifyEmailOutput> {
     try {
       const verification = await this.verifications.findOne({
         where: { code },
@@ -125,15 +142,19 @@ export class UsersService {
       // console.log(verification);
       if (verification) {
         verification.user.verified = true;
-        this.users.save(verification.user);
-        //entity의 BeforeInsert로 한번 더 헤시를 해서 재암호화로 비밀번호 인증에 에러 발생
-
-        return true;
+        // code가 있다먄 user테이블의 verifiedfmf true로 바꿔줘
+        await this.users.save(verification.user);
+        // 바꾼 내용을 user테이블에 저장해줘
+        // entity의 BeforeInsert로 한번 더 헤시를 해서 재암호화로 비밀번호 인증에 에러 발생
+        // 해결 : entity에 password column에 selete:false를 설정
+        await this.verifications.delete(verification.id);
+        // 인증이 끝났으니까 verifications테이블의 인증이 끝난 코드는 지워줘
+        return { ok: true };
       }
-      throw new Error();
-    } catch (e) {
-      console.log(e);
-      return false;
+      return { ok: false, error: 'Verification not found.' };
+    } catch (error) {
+      // console.log(error);
+      return { ok: false, error };
     }
   }
 }
