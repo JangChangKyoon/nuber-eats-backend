@@ -64,12 +64,14 @@ export class UsersService {
 
   async login({ email, password }: LoginInput): Promise<LoginOutput> {
     try {
-      const user = await this.users.findOne({
-        where: { email },
-        select: ['id', 'password'],
+      const user = await this.users.findOne(
+        {
+          where: { email },
+          select: ['id', 'password'],
+        },
         // select: ['password'] : entity에 기본적으로 출력되지 않도록 설정해놓아서(select: false)
         // 그걸을 무시하고 호출하도록 함
-      });
+      );
       // console.log(user);
       if (!user) {
         return {

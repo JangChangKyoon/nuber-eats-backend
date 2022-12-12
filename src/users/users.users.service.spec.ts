@@ -6,6 +6,7 @@ import { User } from './entities/user.entity';
 import { Verification } from './entities/verification.entity';
 import { UsersService } from './users.service';
 import { JoinColumn, Repository } from 'typeorm';
+import { isBooleanObject } from 'util/types';
 
 // TEST module의 getRepositoryToken와 연관됨.
 const mockRepository = () => ({
@@ -17,7 +18,8 @@ const mockRepository = () => ({
 // TEST module(ockMailService)의 JwtService와 연관됨.
 const mockJwtService = () => ({
   //아래는 JwtService에서 사용된 함수들
-  sign: jest.fn(),
+  sign: jest.fn(() => 'signed-token-baby'),
+  // jwt의 sign 함수를 "sign token baby"을 return 하도록 만듦
   verify: jest.fn(),
 });
 // TEST module의 MailService와 연관됨.
@@ -47,9 +49,11 @@ describe('UsersService', () => {
   let usersRepository: MockRepository<User>;
   let verificationRepository: MockRepository<User>;
   let mailService: MailService;
+  let jwtService: JwtService;
 
   // TEST Module
-  beforeAll(async () => {
+  // beforeAll(async () => { // calls 오류 발생
+  beforeEach(async () => {
     const module = await Test.createTestingModule({
       // 모듈로 불러올 것들
       providers: [
@@ -79,6 +83,7 @@ describe('UsersService', () => {
     usersRepository = module.get(getRepositoryToken(User));
     verificationRepository = module.get(getRepositoryToken(Verification));
     mailService = module.get<MailService>(MailService);
+    jwtService = module.get<JwtService>(JwtService);
   });
 
   it('Should be defined', () => {
@@ -174,7 +179,6 @@ describe('UsersService', () => {
 
       expect(result).toEqual({ ok: true });
     });
-
     it('should fail on exception', async () => {
       /* 테스트 범위  
       catch (e) {
@@ -188,42 +192,91 @@ describe('UsersService', () => {
     });
   });
 
-  // describe('login', () => {
-  //   const loginArgs = {
-  //     email: 'JC@Jo.ke',
-  //     password: 'bs.password',
-  //   };
+  describe('login', () => {
+    const loginArgs = {
+      email: 'JC@Jo.ke',
+      password: 'bs.password',
+    };
 
-  //   it('should fail if user does not exist', async () => {
-  //     /* 테스트 범위
-  //     await this.users.findOne({
-  //       where: { email },
-  //       select: ['id', 'password'],
-  //     });
-  //     if (!user) {
-  //       return {
-  //         ok: false,
-  //         error: 'User not found',
-  //       };
-  //     }
-  //     */
+    it('should fail if user does not exist', async () => {
+      /* 테스트 범위
+      await this.users.findOne({
+        where: { email },
+        select: ['id', 'password'],
+      });
+      if (!user) {
+        return {
+          ok: false,
+          error: 'User not found',
+        };
+      }
+      */
 
-  //     usersRepository.findOne.mockResolvedValue(null);
+      usersRepository.findOne.mockResolvedValue(null);
 
-  //     const result = await service.login(loginArgs);
+      const result = await service.login(loginArgs);
 
-  //     expect(usersRepository.findOne).toHaveBeenCalledTimes(1);
-  //     expect(usersRepository.findOne).toHaveBeenCalledWith(
-  //       expect.any(Object),
-  //       expect.any(Object),
-  //     );
+      expect(usersRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(usersRepository.findOne).toHaveBeenCalledWith({
+        where: expect.any(Object),
+        select: expect.any(Array),
+      });
 
-  //     expect(result).toEqual({
-  //       ok: false,
-  //       error: 'User not found',
-  //     });
-  //   });
-  // });
+      expect(result).toEqual({
+        ok: false,
+        error: 'User not found',
+      });
+    });
+
+    it('should fall if the password is wrong', async () => {
+      /* 테스트 범위
+      const passwordCorrect = await user.checkPassword(password);
+       if (!passwordCorrect) {
+         return {
+            ok: false,
+            error: 'Wrong Password',
+         };
+       } */
+
+      const mockedUser = {
+        checkPassword: jest.fn(() => Promise.resolve(false)),
+        // promise.(~)를 return하는 mockfunction
+      };
+
+      usersRepository.findOne.mockResolvedValue(mockedUser);
+      // 일부로 (!passwordCorrect)로 만듦
+
+      /* 아래 코드
+      if (!user) {
+        return {
+          ok: false,
+          error: 'User not found',
+        };
+      }
+       */
+      const result = await service.login(loginArgs);
+      expect(result).toEqual({ ok: false, error: 'Wrong Password' });
+    });
+    it('should return token if password correct', async () => {
+      /* 테스트 범위
+         const token = this.jwtService.sign(user.id);
+         sign(userId: number): string {
+           return jwt.sign({ id: userId }, this.options.privateKey)};
+  }
+        */
+      const mockedUser = {
+        id: 1,
+        checkPassword: jest.fn(() => Promise.resolve(true)),
+      };
+      usersRepository.findOne.mockResolvedValue(mockedUser);
+      const result = await service.login(loginArgs);
+      // console.log(result);
+      expect(jwtService.sign).toHaveBeenCalledTimes(1);
+      expect(jwtService.sign).toHaveBeenCalledWith(expect.any(Number));
+      expect(result).toEqual({ ok: true, token: 'signed-token-baby' });
+      // token: 위 맵버변수 Object에 설정한 값
+    });
+  });
 
   it.todo('findById');
   it.todo('editProfile');
