@@ -94,17 +94,19 @@ export class UsersService {
     } catch (error) {
       return {
         ok: false,
-        error,
+        error: "Can't log user in.",
       };
     }
   }
 
   async findById(id: number): Promise<UserProfileOutput> {
     try {
-      const user = await this.users.findOne({ where: { id } });
-      if (user) {
-        return { ok: true, user: user };
-      }
+      const user = await this.users.findOneOrFail({ where: { id } });
+      // error를 throw
+      // if (user) {
+
+      return { ok: true, user }; //: user };
+      // }
     } catch (error) {
       return { ok: false, error: 'User Not Found' };
     }
