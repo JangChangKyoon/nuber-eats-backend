@@ -5,30 +5,32 @@ import { MailService } from 'src/mail/mail.service';
 import { User } from './entities/user.entity';
 import { Verification } from './entities/verification.entity';
 import { UsersService } from './users.service';
-import { Repository } from 'typeorm';
+import { JoinColumn, Repository } from 'typeorm';
 
 // TEST module의 getRepositoryToken와 연관됨.
-const mockRepository = {
-  //아래는 usersService에서 사용된 repository의 함수들
+const mockRepository = () => ({
+  //아래는 usersService에서 사용된 repository의 함수(findOne,save,create,update)들
   findOne: jest.fn(),
   save: jest.fn(),
   create: jest.fn(),
-};
+});
 // TEST module(ockMailService)의 JwtService와 연관됨.
-const mockJwtService = {
+const mockJwtService = () => ({
   //아래는 JwtService에서 사용된 함수들
   sign: jest.fn(),
   verify: jest.fn(),
-};
+});
 // TEST module의 MailService와 연관됨.
-const mockMailService = {
+const mockMailService = () => ({
   //아래는 mockMailService에서 사용된 함수들
   sendVerificationEmail: jest.fn(),
-};
+});
 
 // import { Repository } from 'typeorm';
 type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
 // 아래 let usersRepository의 타입을 정해줌
+// repository의 함수들 즉, findOne,save,create,update 등의 타입이 mock이라고 지정
+
 /*
  Record(https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type) 
   - 속성키가 Key이고 속성값이 Type인 객체 유형을 구성, 
@@ -40,11 +42,11 @@ type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
 */
 
 describe('UsersService', () => {
+  /* 아래 TEST모듈(mockMailService)에 의해 맴버변수로 온 것, describe 아래 다른 것을 위해 사용될 것이다.*/
   let service: UsersService;
-  // 아래 TEST모듈(mockMailService)에 의해 맴버변수로 온 것, describe 아래 다른 것을 위해 사용될 것이다.
-
   let usersRepository: MockRepository<User>;
-  // 아래 TEST모듈(mockMailService)에 의해 맴버변수로 온 것
+  let verificationRepository: MockRepository<User>;
+  let mailService: MailService;
 
   // TEST Module
   beforeAll(async () => {
@@ -52,37 +54,177 @@ describe('UsersService', () => {
       // 모듈로 불러올 것들
       providers: [
         UsersService,
+        // UsersService에서 사용되는 모든 함수들을 불러와서 모조하는 작업
         {
-          provide: getRepositoryToken(User), // User Entity의 repository token을 제공해줌
-          useValue: mockRepository,
+          provide: getRepositoryToken(User), // User Entity의 repository token(함수)들을 제공해줌
+          useValue: mockRepository(),
         },
         {
-          provide: getRepositoryToken(Verification), // Verification Entity의 repository token을 제공해줌
-          useValue: mockRepository,
+          provide: getRepositoryToken(Verification), // Verification Entity의 repository token(함수)들을 제공해줌
+          useValue: mockRepository(),
         },
         {
           provide: JwtService,
-          useValue: mockJwtService,
+          useValue: mockJwtService(),
         },
         {
           provide: MailService,
-          useValue: mockMailService,
+          useValue: mockMailService(),
         },
       ],
     }).compile(); // 컴파일
+
+    /* 불러온 것을 사용하려고 꺼내 위 맴버 변수로 보내주는 것*/
     service = module.get<UsersService>(UsersService);
-    // 불러온 것을 사용하려고 꺼내 위 맴버 변수로 보내주는 것
     usersRepository = module.get(getRepositoryToken(User));
+    verificationRepository = module.get(getRepositoryToken(Verification));
+    mailService = module.get<MailService>(MailService);
   });
 
   it('Should be defined', () => {
     expect(service).toBeDefined();
   });
 
+  //describe(테스트대상함수, ()=>{해당함수내로직...})
   describe('createAccount', () => {
-    it('should fall if user exists', () => {});
+    const createAccountArgs = {
+      email: 'jc@js.js',
+      password: 'js.password',
+      role: 0,
+    };
+    it('should fall if user exists', async () => {
+      usersRepository.findOne.mockResolvedValue({
+        // mockResolvedValue = Promise.resolve(value)
+        // 결과물을 mock
+        id: 1,
+        email: '',
+      });
+      const result = await service.createAccount(createAccountArgs);
+      // service: 위 맴버변수를 가자와서 사용하며, 실제 로직(UsersService의 createAccount)에 접근하나,
+      // 결과는 DB에 반영되지 않도록 함.
+      expect(result).toMatchObject({
+        // toMatchObject : {ok:boolean, error:string}
+        ok: false,
+        error: 'There is a user with that email already',
+      });
+    });
+    it('should create a new user', async () => {
+      /* MOCKING return value
+       - return value is returned by a function, the other one is returned by a promise.
+      '- resolved' emulates returned value by an 'await'
+      */
+
+      usersRepository.findOne.mockResolvedValue(undefined); //mock return value : undefined
+      // findOne에 들어온 값이 없음을 기대
+
+      usersRepository.create.mockReturnValue(createAccountArgs); // create : return entity(looks like Object)
+      // return 값을 설정해 줌 : createAccountArgs
+      // for 아래 코드 인수 확인하려고 => expect(usersRepository.save).toHaveBeenCalledWith(createAccountArgs);
+
+      usersRepository.save.mockResolvedValue(createAccountArgs); // mock : return user Object : createAccountArgs
+      // user 값을 mock save 해줌
+
+      verificationRepository.create.mockReturnValue({
+        user: createAccountArgs, // create return : return verification entity() : {user: createAccountArgs}
+      }); //
+
+      verificationRepository.save.mockResolvedValue({
+        code: 'code',
+      }); // mock : return verification.code : { code: 'code' }
+
+      const result = await service.createAccount(createAccountArgs);
+      // TEST하기 위해 변수에 담음
+
+      /* 위 Mocking return과 인수를 대조하며 TEST */
+
+      /* 테스트 범위
+      const user = await this.users.save(
+        this.users.create({ email, password, role }),
+      );
+       */
+      expect(usersRepository.create).toHaveBeenCalledTimes(1);
+      // toHaveBeenCalledTimes(1) : 이 메소드가 한번 불릴 것이라 기대
+      expect(usersRepository.create).toHaveBeenCalledWith(createAccountArgs);
+      // toHaveBeenCalledWith : 무엇과 같이 호출되는 지 확인(인수 확인)
+      expect(usersRepository.save).toHaveBeenCalledTimes(1);
+      expect(usersRepository.save).toHaveBeenCalledWith(createAccountArgs); // 필요요건 await service.createAccount(createAccountArgs);
+
+      /* 테스트 범위      
+      const verification = await this.verifications.save(
+        this.verifications.create({ user }),
+      ); */
+      expect(verificationRepository.create).toHaveBeenCalledTimes(1);
+      expect(verificationRepository.create).toHaveBeenCalledWith({
+        user: createAccountArgs, // 필요요소(user값) usersRepository.save.mockResolvedValue(createAccountArgs)
+      });
+      expect(verificationRepository.save).toHaveBeenCalledTimes(1);
+      expect(verificationRepository.save).toHaveBeenCalledWith({
+        user: createAccountArgs,
+      });
+
+      /* 테스트 범위  
+      this.mailService.sendVerificationEmail(user.email, verification.code);
+      */
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledTimes(1);
+      //verification.code이 있어야 작동하므로 위에서 mock해주자
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+      );
+
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('should fail on exception', async () => {
+      /* 테스트 범위  
+      catch (e) {
+        return { ok: false, error: "Couldn't create account" };
+      }
+      */
+      usersRepository.findOne.mockRejectedValue(new Error());
+      // mockRejectedValue : 항상 거부하는 비동기 mock 함수를 만드는 데 유용
+      const result = await service.createAccount(createAccountArgs);
+      expect(result).toEqual({ ok: false, error: "Couldn't create account" });
+    });
   });
-  it.todo('login');
+
+  // describe('login', () => {
+  //   const loginArgs = {
+  //     email: 'JC@Jo.ke',
+  //     password: 'bs.password',
+  //   };
+
+  //   it('should fail if user does not exist', async () => {
+  //     /* 테스트 범위
+  //     await this.users.findOne({
+  //       where: { email },
+  //       select: ['id', 'password'],
+  //     });
+  //     if (!user) {
+  //       return {
+  //         ok: false,
+  //         error: 'User not found',
+  //       };
+  //     }
+  //     */
+
+  //     usersRepository.findOne.mockResolvedValue(null);
+
+  //     const result = await service.login(loginArgs);
+
+  //     expect(usersRepository.findOne).toHaveBeenCalledTimes(1);
+  //     expect(usersRepository.findOne).toHaveBeenCalledWith(
+  //       expect.any(Object),
+  //       expect.any(Object),
+  //     );
+
+  //     expect(result).toEqual({
+  //       ok: false,
+  //       error: 'User not found',
+  //     });
+  //   });
+  // });
+
   it.todo('findById');
   it.todo('editProfile');
   it.todo('verifyEmail');

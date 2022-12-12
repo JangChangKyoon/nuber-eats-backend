@@ -46,6 +46,7 @@ export class UsersService {
         // console.log('[---------service_createAcount error--------]');
         return { ok: false, error: 'There is a user with that email already' };
       }
+
       // await this.users.save(this.users.create({ email, password, role }));
       const user = await this.users.save(
         this.users.create({ email, password, role }),
