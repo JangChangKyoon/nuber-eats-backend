@@ -5,7 +5,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@ObjectType()
 export class CoreEntity {
   @PrimaryGeneratedColumn()
   @Field((type) => String)

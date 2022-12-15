@@ -14,6 +14,7 @@ const mockRepository = () => ({
   findOne: jest.fn(),
   save: jest.fn(),
   create: jest.fn(),
+  findOneOrFail: jest.fn(),
   // findOneOrFail: jest.fn(),
 });
 // TEST module(ockMailService)의 JwtService와 연관됨.
@@ -302,6 +303,59 @@ describe('UsersService', () => {
     });
   });
 
-  it.todo('editProfile');
+  describe('editProfile', () => {
+    it('should change email', async () => {
+      /*
+      if (email) {
+        user.email = email;
+        user.verified = false;
+      */
+      const oldUser = {
+        email: 'bs@old.com',
+        verified: true,
+      };
+      const editProfileArgs = {
+        userId: { where: { id: 3 } },
+        input: { email: 'bs@new.com' },
+      };
+      const newVerification = {
+        code: 'code',
+      };
+      const newUser = {
+        verified: false,
+        email: editProfileArgs.input.email,
+      };
+
+      // Mocking
+      /* const user = await this.users.findOne({ where: { id: userId } });*/
+      usersRepository.findOne.mockResolvedValue(oldUser);
+      /* this.verifications.create({ user }) */
+      verificationRepository.create.mockReturnValue(newVerification);
+      /* await this.verifications.save */
+      verificationRepository.save.mockReturnValue(newVerification);
+
+      await service.editProfile(
+        editProfileArgs.userId.where.id,
+        // editProfileArgs.userId,
+        editProfileArgs.input,
+      );
+
+      /* */
+      expect(usersRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(usersRepository.findOne).toHaveBeenCalledWith(
+        editProfileArgs.userId,
+      );
+      expect(verificationRepository.create).toHaveBeenCalledWith({
+        user: newUser,
+      });
+      expect(verificationRepository.save).toHaveBeenCalledWith(newVerification);
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledWith(
+        newUser.email,
+        newVerification.code,
+      );
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it.todo('verifyEmail');
 });
