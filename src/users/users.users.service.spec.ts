@@ -15,7 +15,7 @@ const mockRepository = () => ({
   save: jest.fn(),
   create: jest.fn(),
   findOneOrFail: jest.fn(),
-  // findOneOrFail: jest.fn(),
+  delete: jest.fn(),
 });
 // TEST module(ockMailService)의 JwtService와 연관됨.
 const mockJwtService = () => ({
@@ -308,8 +308,7 @@ describe('UsersService', () => {
       /*
       if (email) {
         user.email = email;
-        user.verified = false;
-      */
+        user.verified = false; */
       const oldUser = {
         email: 'bs@old.com',
         verified: true,
@@ -336,7 +335,6 @@ describe('UsersService', () => {
 
       await service.editProfile(
         editProfileArgs.userId.where.id,
-        // editProfileArgs.userId,
         editProfileArgs.input,
       );
 
@@ -349,13 +347,75 @@ describe('UsersService', () => {
         user: newUser,
       });
       expect(verificationRepository.save).toHaveBeenCalledWith(newVerification);
+      /* this.mailService.sendVerificationEmail(user.email, verification.code) */
       expect(mailService.sendVerificationEmail).toHaveBeenCalledWith(
         newUser.email,
         newVerification.code,
       );
       expect(mailService.sendVerificationEmail).toHaveBeenCalledTimes(1);
     });
+
+    it('should change password', async () => {
+      const editProfileArgs = {
+        userId: 1,
+        input: { password: 'new.password' },
+      };
+      /* await this.users.save(user) */
+      usersRepository.findOne.mockResolvedValue({ password: 'old' }); // return user.password
+      const result = await service.editProfile(
+        editProfileArgs.userId,
+        editProfileArgs.input,
+      );
+
+      expect(usersRepository.save).toHaveBeenCalledTimes(1);
+      expect(usersRepository.save).toHaveBeenCalledWith(editProfileArgs.input);
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('should fail on exception', async () => {
+      usersRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.editProfile(1, { email: '12' });
+      expect(result).toEqual({ ok: false, error: 'Could not update profile' });
+    });
   });
 
-  it.todo('verifyEmail');
+  describe('verifyEmail', () => {
+    it('sholud verify email', async () => {
+      const mockedVerification = {
+        user: {
+          verified: false,
+        },
+        id: 1,
+      };
+      verificationRepository.findOne.mockResolvedValue(mockedVerification);
+
+      const result = await service.verifyEmail('');
+
+      expect(verificationRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(verificationRepository.findOne).toHaveBeenCalledWith({
+        relations: expect.any(Object),
+        where: expect.any(Object),
+      });
+      expect(usersRepository.save).toHaveBeenCalledTimes(1);
+      expect(usersRepository.save).toHaveBeenCalledWith({ verified: true }); //{ verified: true }인 유저저
+
+      expect(verificationRepository.delete).toHaveBeenCalledTimes(1);
+      expect(verificationRepository.delete).toHaveBeenCalledWith(
+        mockedVerification.id,
+      );
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('should fail on verification not found', async () => {
+      verificationRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.verifyEmail('');
+      expect(result).toEqual({ ok: false, error: 'Could not verify email.' });
+    });
+
+    it('should fail on exception', async () => {
+      verificationRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.verifyEmail('');
+      expect(result).toEqual({ ok: false, error: 'Could not verify email.' });
+    });
+  });
 });
