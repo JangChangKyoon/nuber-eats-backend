@@ -18,3 +18,10 @@ The Backend of Nuber Eats Clone
 - See Profile
 - Edit Profile
 - Verify Email
+
+## Resraurant CRUD
+
+- name
+- category
+- address
+- coverImage
