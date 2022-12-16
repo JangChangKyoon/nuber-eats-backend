@@ -19,7 +19,7 @@ The Backend of Nuber Eats Clone
 - Edit Profile
 - Verify Email
 
-## Resraurant CRUD
+## Resraurant Model
 
 - name
 - category
