@@ -11,6 +11,7 @@ import { InternalServerErrorException } from '@nestjs/common';
 import { IsEmail, IsEnum } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { boolean, string } from 'joi';
+import { IsBoolean, IsString, Length, IsOptional } from 'class-validator';
 
 enum UserRole { // for DB
   Client,
@@ -31,6 +32,7 @@ export class User extends CoreEntity {
 
   @Column({ select: false })
   @Field((type) => String) //gql with @ObjectType
+  @IsString()
   password: string;
   // select: boolean - Defines whether or not to hide this column by default when making queries.
   // When set to false, the column data will not show with a standard query.
@@ -43,6 +45,7 @@ export class User extends CoreEntity {
 
   @Column({ default: false })
   @Field((type) => Boolean)
+  @IsBoolean()
   verified: boolean;
 
   @BeforeUpdate() // before save by update
