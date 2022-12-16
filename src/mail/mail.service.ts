@@ -13,11 +13,12 @@ export class MailService {
     // this.sendEmail('testing', 'test');
   }
 
-  private async sendEmail(
+  // private async sendEmail(
+  async sendEmail(
     subject: string,
     template: string,
     emailVars: EmailVar[],
-  ) {
+  ): Promise<boolean> {
     const form = new FormData();
     form.append('from', `Excited User <mailgun@${this.options.domain}>`);
     form.append('to', `jachky22@daum.net`); // 받을 사람 이메일주소
@@ -29,19 +30,24 @@ export class MailService {
     form.append('template', template); // mailgun template 변수
     emailVars.forEach((eVar) => form.append(`v:${eVar.key}`, eVar.value));
     try {
-      await got(`https://api.mailgun.net/v3/${this.options.domain}/messages`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${Buffer.from(
-            `api:${this.options.apiKey}`,
-          ).toString('base64')}`,
-          //API내역서 가장 위 부분 : curl -s --user 'api:YOUR_API_KEY' \
-          // 여기서 --user은 Basic을 의미하며 유저명과 패스워드를 필요로 함
+      // await got(`https://api.mailgun.net/v3/${this.options.domain}/messages`, {
+      //   method: 'POST',
+      await got.post(
+        `https://api.mailgun.net/v3/${this.options.domain}/messages`,
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(
+              `api:${this.options.apiKey}`,
+            ).toString('base64')}`,
+            //API내역서 가장 위 부분 : curl -s --user 'api:YOUR_API_KEY' \
+            // 여기서 --user은 Basic을 의미하며 유저명과 패스워드를 필요로 함
+          },
+          body: form,
         },
-        body: form,
-      });
+      );
+      return true;
     } catch (error) {
-      console.log(error);
+      return false;
     }
     // console.log(response.body);
   }
