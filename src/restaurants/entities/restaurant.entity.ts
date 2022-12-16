@@ -1,6 +1,7 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
 import { IsBoolean, IsString, Length, IsOptional } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
+import { User } from 'src/users/entities/user.entity';
 import {
   Column,
   Entity,
@@ -10,7 +11,7 @@ import {
 } from 'typeorm';
 import { Category } from './category.entity';
 
-@InputType({ isAbstract: true }) // this Inputtype is not include in schema
+@InputType('RestaurantInputType', { isAbstract: true }) // this Inputtype is not include in schema
 @ObjectType()
 @Entity()
 export class Restaurant extends CoreEntity {
@@ -19,6 +20,12 @@ export class Restaurant extends CoreEntity {
   @IsString() // gql
   @Length(5) // validator
   name: string;
+
+  // @Field(type => Boolean, { nullable: true })
+  // @Column({ default: true })
+  // @IsOptional()
+  // @IsBoolean()
+  // isVegan: boolean;
 
   @Field((type) => String)
   @Column()
@@ -30,9 +37,16 @@ export class Restaurant extends CoreEntity {
   @IsString()
   address: string;
 
-  @Field((type) => Category)
-  @ManyToOne((type) => Category, (category) => category.restaurants)
+  @Field((type) => Category, { nullable: true })
+  @ManyToOne((type) => Category, (category) => category.restaurants, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   category: Category;
+
+  @Field((type) => User)
+  @ManyToOne((type) => User, (user) => user.restaurants)
+  owner: User;
 
   // @Field((type) => String)
   // @Column()

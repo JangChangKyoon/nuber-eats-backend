@@ -4,7 +4,7 @@ import {
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
-import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
@@ -12,6 +12,7 @@ import { IsEmail, IsEnum } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { boolean, string } from 'joi';
 import { IsBoolean, IsString, Length, IsOptional } from 'class-validator';
+import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 
 enum UserRole { // for DB
   Client,
@@ -21,7 +22,7 @@ enum UserRole { // for DB
 
 registerEnumType(UserRole, { name: 'UserRole' }); // for gql
 
-@InputType({ isAbstract: true }) // this Inputtype is not included in schema
+@InputType('UserInputType', { isAbstract: true }) // this Inputtype is not included in schema
 @ObjectType() // in gql designates each type with below @Field
 @Entity()
 export class User extends CoreEntity {
@@ -47,6 +48,10 @@ export class User extends CoreEntity {
   @Field((type) => Boolean)
   @IsBoolean()
   verified: boolean;
+
+  @Field((type) => [Restaurant])
+  @OneToMany((type) => Restaurant, (restaurant) => restaurant.owner)
+  restaurants: Restaurant[];
 
   @BeforeUpdate() // before save by update
   @BeforeInsert() // before save in database
