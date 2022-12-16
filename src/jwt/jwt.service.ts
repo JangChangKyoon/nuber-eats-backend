@@ -8,7 +8,7 @@ export class JwtService {
   constructor(
     @Inject(CONFIG_OPTIONS) private readonly options: JwtModuleOptions,
   ) {
-    console.log(options); // inject test
+    // console.log(options); // inject test
   }
 
   // excuted in usersService
