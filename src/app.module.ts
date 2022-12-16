@@ -20,6 +20,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
 import { AuthModule } from './auth/auth.module';
 import { Verification } from './users/entities/verification.entity';
 import { MailModule } from './mail/mail.module';
+import { Category } from './restaurants/entities/category.entity';
 
 @Module({
   imports: [
@@ -55,7 +56,7 @@ import { MailModule } from './mail/mail.module';
       database: process.env.DB_NAME,
       synchronize: process.env.NODE_ENV !== 'prod',
       logging: process.env.NODE_ENV !== 'prod',
-      entities: [User, Verification], // 데이터베이스가 entity를 인식할 수 있도록 함.
+      entities: [User, Verification, Restaurant, Category], // 데이터베이스가 entity를 인식할 수 있도록 함.
     }),
     // GraphQL 설정
     GraphQLModule.forRoot<ApolloDriverConfig>({

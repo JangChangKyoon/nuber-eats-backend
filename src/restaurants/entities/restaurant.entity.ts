@@ -1,31 +1,38 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
 import { IsBoolean, IsString, Length, IsOptional } from 'class-validator';
-import { Column, Entity, PrimaryGeneratedColumn, BaseEntity } from 'typeorm';
+import { CoreEntity } from 'src/common/entities/core.entity';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  BaseEntity,
+  ManyToOne,
+} from 'typeorm';
+import { Category } from './category.entity';
 
 @InputType({ isAbstract: true }) // this Inputtype is not include in schema
 @ObjectType()
 @Entity()
-export class Restaurant extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  @Field((type) => Number)
-  id: number;
+export class Restaurant extends CoreEntity {
+  @Field((type) => String) // grapyql 스키마에서
+  @Column() // database에서
+  @IsString() // gql
+  @Length(5) // validator
+  name: string;
 
   @Field((type) => String)
   @Column()
   @IsString()
-  @Length(5)
-  name: string;
-
-  @Field((type) => Boolean, { nullable: true }) // grapyql 스키마에서
-  @Column({ default: true }) // database에서
-  @IsOptional() // gql
-  @IsBoolean() // gql
-  isVegan: boolean; //db
+  coverImg: string;
 
   @Field((type) => String, { defaultValue: 'korea' })
   @Column()
   @IsString()
   address: string;
+
+  @Field((type) => Category)
+  @ManyToOne((type) => Category, (category) => category.restaurants)
+  category: Category;
 
   // @Field((type) => String)
   // @Column()
