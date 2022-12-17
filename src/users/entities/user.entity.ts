@@ -14,10 +14,10 @@ import { boolean, string } from 'joi';
 import { IsBoolean, IsString, Length, IsOptional } from 'class-validator';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 
-enum UserRole { // for DB
-  Client,
-  Owner,
-  Delivery,
+export enum UserRole { // for DB
+  Client = 'CLIENT',
+  Owner = 'OWNER',
+  Delivery = 'DELIVERY',
 }
 
 registerEnumType(UserRole, { name: 'UserRole' }); // for gql
