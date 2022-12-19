@@ -21,7 +21,7 @@ export class JwtMiddleware implements NestMiddleware {
         try {
           const user = await this.userService.findById(decoded['id']);
           //decoded Object에서 id의 value 값 가져오기
-          console.log(user);
+          // console.log(user);
           req['user'] = user;
         } catch (e) {}
       }

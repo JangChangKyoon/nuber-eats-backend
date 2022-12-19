@@ -15,9 +15,9 @@ import { IsBoolean, IsString, Length, IsOptional } from 'class-validator';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 
 export enum UserRole { // for DB
-  Client = 'CLIENT',
-  Owner = 'OWNER',
-  Delivery = 'DELIVERY',
+  Client = 'Client',
+  Owner = 'Owner',
+  Delivery = 'Delivery',
 }
 
 registerEnumType(UserRole, { name: 'UserRole' }); // for gql
