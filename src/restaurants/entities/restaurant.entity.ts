@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   BaseEntity,
   ManyToOne,
+  RelationId,
 } from 'typeorm';
 import { Category } from './category.entity';
 
@@ -49,6 +50,9 @@ export class Restaurant extends CoreEntity {
     onDelete: 'CASCADE',
   })
   owner: User;
+
+  @RelationId((restaurant: Restaurant) => restaurant.owner)
+  ownerId: number;
 
   // @Field((type) => String)
   // @Column()

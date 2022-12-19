@@ -6,17 +6,21 @@ import {
   CreateRestaurantInput,
   CreateRestaurantOutput,
 } from './dtos/create-restaurant.dto';
+import {
+  EditRestaurantInput,
+  EditRestaurantOutput,
+} from './dtos/edit-restaurant.dto';
 import { UpdateRestaurantDto } from './dtos/update-restaurant.dto';
 import { Category } from './entities/category.entity';
 import { Restaurant } from './entities/restaurant.entity';
+import { CategoryRepository } from './repositories/category.repository';
 
 @Injectable()
 export class RestaurantService {
   constructor(
     @InjectRepository(Restaurant) //전달받은 entity를 기반으로 Repository 생성.
     private readonly restaurants: Repository<Restaurant>, //Repository<Restaurant> : type of restaurants
-    @InjectRepository(Category)
-    private readonly categories: Repository<Category>,
+    private readonly categories: CategoryRepository,
   ) {}
 
   async createRestaurant(
@@ -24,21 +28,19 @@ export class RestaurantService {
     createRestaurantInput: CreateRestaurantInput,
   ): Promise<CreateRestaurantOutput> {
     try {
+      // console.log('hi1');
       const newRestaurant = this.restaurants.create(createRestaurantInput);
+      // console.log(newRestaurant);
       newRestaurant.owner = owner;
-      const categoryName = createRestaurantInput.categoryName
-        .trim() // 앞뒤 빈칸 제거
-        .toLowerCase(); // 모두 소문자로
-      const categorySlug = categoryName.replace(/ /g, '-'); // 모든 빈칸을 -로 변경
-      let category = await this.categories.findOne({
-        where: { slug: categorySlug },
-      });
-      if (!category) {
-        category = await this.categories.save(
-          this.categories.create({ slug: categorySlug, name: categoryName }),
-        );
-      }
+      // newRestaurant.ownerId = owner.user.id;
+      // console.log(newRestaurant.owner);
+      // console.log(newRestaurant.ownerId);
+      const category = await this.categories.getOrCreate(
+        createRestaurantInput.categoryName,
+      );
+      // console.log(category);
       newRestaurant.category = category;
+      // console.log('hi2');
       await this.restaurants.save(newRestaurant);
       return {
         ok: true,
@@ -47,6 +49,54 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not create restaurant',
+      };
+    }
+  }
+
+  async editRestaurant(
+    owner: User,
+    editRestaurantInput: EditRestaurantInput,
+  ): Promise<EditRestaurantOutput> {
+    try {
+      const restaurant = await this.restaurants.findOne({
+        where: { id: editRestaurantInput.restaurantId },
+      });
+      if (!restaurant) {
+        return {
+          ok: false,
+          error: 'Restaurant not found',
+        };
+      }
+      // 성능상 Object보다 id를 비교하는 것이 좋음
+      if (owner.id !== restaurant.ownerId) {
+        return {
+          ok: false,
+          error: "You can't edit a restaurant that you don't own",
+        };
+      }
+
+      let category: Category = null;
+      if (editRestaurantInput.categoryName) {
+        category = await this.categories.getOrCreate(
+          editRestaurantInput.categoryName,
+        );
+      }
+      await this.restaurants.save([
+        {
+          id: editRestaurantInput.restaurantId,
+          ...editRestaurantInput,
+          ...(category && { category }),
+          // if(category) { return category }
+        },
+      ]);
+
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not edit Restaurant',
       };
     }
   }

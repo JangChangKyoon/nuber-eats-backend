@@ -25,3 +25,17 @@ The Backend of Nuber Eats Clone
 - category
 - address
 - coverImage
+
+## Resraurant CRUD
+
+- See Categories
+- See Restaurants by Category (pagination)
+- See Restaurants (pagination)
+- See Restaurant
+
+- Edit Restaurant
+- Delete Restaurant
+
+- Create Dish
+- Edit Dish
+- Delete Dish
