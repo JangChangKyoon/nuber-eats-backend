@@ -1,15 +1,29 @@
-import { Args, Query, Resolver, Mutation } from '@nestjs/graphql';
+import {
+  Args,
+  Query,
+  Resolver,
+  Mutation,
+  ResolveField,
+  Int,
+  Parent,
+} from '@nestjs/graphql';
 import { AuthUser } from 'src/auth/auth-user.decorator';
 import { Role } from 'src/auth/role.decorator';
 import { User } from 'src/users/entities/user.entity';
+import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import {
   CreateRestaurantInput,
   CreateRestaurantOutput,
 } from './dtos/create-restaurant.dto';
 import {
+  DeleteRestaurantInput,
+  DeleteRestaurantOutput,
+} from './dtos/delete-restaurant.dto';
+import {
   EditRestaurantInput,
   EditRestaurantOutput,
 } from './dtos/edit-restaurant.dto';
+import { Category } from './entities/category.entity';
 import { Restaurant } from './entities/restaurant.entity';
 import { RestaurantService } from './restaurants.service';
 
@@ -38,6 +52,38 @@ export class RestaurantResolver {
     @Args('input') editRestaurantInput: EditRestaurantInput,
   ): Promise<EditRestaurantOutput> {
     return this.restaurantService.editRestaurant(owner, editRestaurantInput);
+  }
+
+  @Mutation((returns) => DeleteRestaurantOutput)
+  @Role(['Owner'])
+  deleteRestaurant(
+    @AuthUser() owner: User,
+    @Args('input') deleteRestaurantInput: DeleteRestaurantInput,
+  ): Promise<DeleteRestaurantOutput> {
+    return this.restaurantService.deleteRestaurant(
+      owner,
+      deleteRestaurantInput,
+    );
+  }
+}
+
+@Resolver((of) => Category)
+export class CategoryResolver {
+  constructor(private readonly restaurantService: RestaurantService) {}
+
+  @ResolveField((type) => Int)
+  restaurantCount(@Parent() category: Category): Promise<number> {
+    // @Parent() category : 부모 field인 category를 args로 가져옴
+    // console.log(category);
+    return this.restaurantService.countRestaurants(category);
+  }
+  // dynamic Field : db(entity)에 실제 저장되지 않는 field,
+  // request 있을 때마다 계산해서 보여주는 field
+  // 로그인된 사용자의 상태에 따라 계산되는 field임
+
+  @Query((type) => AllCategoriesOutput)
+  allCategories(): Promise<AllCategoriesOutput> {
+    return this.restaurantService.allCategories();
   }
 }
 
