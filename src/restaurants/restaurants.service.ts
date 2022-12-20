@@ -158,22 +158,37 @@ export class RestaurantService {
     // https://typeorm.io/repository-api
   }
 
-  async findCategoryBySlug({ slug }: CategoryInput): Promise<CategoryOutput> {
+  async findCategoryBySlug({
+    slug,
+    page,
+  }: CategoryInput): Promise<CategoryOutput> {
     try {
-      const category = await this.categories.findOne({
-        where: { slug },
-        relations: { restaurants: true },
-        // https://typeorm.io/changelog#breaking-changes-1
-      });
+      // const category = await this.categories.findOne({
+      //   where: { slug },
+      //   relations: { restaurants: true },
+      //   // https://typeorm.io/changelog#breaking-changes-1
+      // });
+      const category = await this.categories.findOne({ where: { slug } });
       if (!category) {
         return {
           ok: false,
           error: 'Category not found',
         };
       }
+      const restaurants = await this.restaurants.find({
+        where: {
+          // 엔티티를 쿼리할 조건
+          category: { id: category.id },
+        },
+        take: 25, // 가져올 엔티티 갯수
+        skip: (page - 1) * 25, // 스킵할 엔티티 갯수
+      });
+      category.restaurants = restaurants;
+      const totalResults = await this.countRestaurants(category);
       return {
         ok: true,
         category,
+        totalPages: Math.ceil(totalResults / 25),
       };
     } catch {
       return {
