@@ -3,7 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
 import { Restaurant } from './entities/restaurant.entity';
 import { CategoryRepository } from './repositories/category.repository';
-import { CategoryResolver, RestaurantResolver } from './restaurants.resolver';
+import {
+  CategoryResolver,
+  DishResolver,
+  RestaurantResolver,
+} from './restaurants.resolver';
 import { RestaurantService } from './restaurants.service';
 
 @Module({
@@ -14,6 +18,7 @@ import { RestaurantService } from './restaurants.service';
     RestaurantService,
     CategoryResolver,
     CategoryRepository,
+    DishResolver,
   ], //providers에 RestaurantService 주입 => RestaurantResolver에서 사용 가능.
 })
 export class RestaurantsModule {}

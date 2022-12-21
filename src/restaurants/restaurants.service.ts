@@ -4,6 +4,7 @@ import { User } from 'src/users/entities/user.entity';
 import { Like, Raw, Repository } from 'typeorm';
 import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
+import { CreateDishInput, CreateDishOutput } from './dtos/create-dish.dto';
 import {
   CreateRestaurantInput,
   CreateRestaurantOutput,
@@ -231,6 +232,7 @@ export class RestaurantService {
     try {
       const restaurant = await this.restaurants.findOne({
         where: { id: restaurantId },
+        relations: { menu: true },
       });
       if (!restaurant) {
         return {
@@ -283,6 +285,15 @@ export class RestaurantService {
   WHERE SALARY LIKE '%2': 2로 끝나는 값을 찾습니다.
   https://www.tutorialspoint.com/sql/sql-like-clause.htm
   */
+
+  async CreateDishInput(
+    owner: User,
+    createDishInput: CreateDishInput,
+  ): Promise<CreateDishOutput> {
+    return {
+      ok: false,
+    };
+  }
 }
 // before #11.2 createRestaurant
 // getAll(): Promise<Restaurant[]> {
