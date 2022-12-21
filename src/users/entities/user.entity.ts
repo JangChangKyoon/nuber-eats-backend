@@ -13,7 +13,7 @@ import { CoreEntity } from 'src/common/entities/core.entity';
 import { boolean, string } from 'joi';
 import { IsBoolean, IsString, Length, IsOptional } from 'class-validator';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
-import { Order } from 'src/orders/order.entity';
+import { Order } from 'src/orders/entities/order.entity';
 
 export enum UserRole { // for DB
   Client = 'Client',

@@ -23,7 +23,7 @@ import { MailModule } from './mail/mail.module';
 import { Category } from './restaurants/entities/category.entity';
 import { Dish } from './restaurants/entities/dish.entity';
 import { OrdersModule } from './orders/orders.module';
-import { Order } from './orders/order.entity';
+import { Order } from './orders/entities/order.entity';
 
 @Module({
   imports: [
