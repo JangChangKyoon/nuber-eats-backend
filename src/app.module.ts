@@ -22,6 +22,8 @@ import { Verification } from './users/entities/verification.entity';
 import { MailModule } from './mail/mail.module';
 import { Category } from './restaurants/entities/category.entity';
 import { Dish } from './restaurants/entities/dish.entity';
+import { OrdersModule } from './orders/orders.module';
+import { Order } from './orders/order.entity';
 
 @Module({
   imports: [
@@ -46,8 +48,10 @@ import { Dish } from './restaurants/entities/dish.entity';
         MAILGUN_FROM_EMAIL: Joi.string().required(),
       }),
     }),
+
     // DB세팅
     // import { Verification } from './users/entities/verification.entity';
+
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -57,7 +61,7 @@ import { Dish } from './restaurants/entities/dish.entity';
       database: process.env.DB_NAME,
       synchronize: process.env.NODE_ENV !== 'prod',
       logging: process.env.NODE_ENV !== 'prod',
-      entities: [User, Verification, Restaurant, Category, Dish], // 데이터베이스가 entity를 인식할 수 있도록 함.
+      entities: [User, Verification, Restaurant, Category, Dish, Order], // 데이터베이스가 entity를 인식할 수 있도록 함.
     }),
     // GraphQL 설정
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -73,6 +77,7 @@ import { Dish } from './restaurants/entities/dish.entity';
       domain: process.env.MAILGUN_DOMAIN_NAME,
       fromEmail: process.env.MAILGUN_FROM_EMAIL,
     }),
+    OrdersModule,
     AuthModule, // static module : 어떠한 설정도 적용되어 있지 않은 모듈
     UsersModule,
     RestaurantsModule,

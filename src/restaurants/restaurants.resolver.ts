@@ -150,7 +150,7 @@ export class DishResolver {
 
   @Mutation((type) => DeleteDishOutput)
   @Role(['Owner'])
-  DeleteDishOutput(
+  deleteDish(
     @AuthUser() owner: User,
     @Args('input') deleteDishInput: DeleteDishInput,
   ): Promise<DeleteDishOutput> {
