@@ -19,7 +19,7 @@ export class DishOption {
   @Field((type) => String)
   name: string;
   @Field((type) => [DishChoice], { nullable: true })
-  choice?: DishChoice[];
+  choices?: DishChoice[];
   @Field((type) => Int, { nullable: true })
   extra?: number;
 }
