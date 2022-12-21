@@ -4,15 +4,24 @@ import { CoreEntity } from 'src/common/entities/core.entity';
 import { Column, Entity, ManyToOne, RelationId } from 'typeorm';
 import { Restaurant } from './restaurant.entity';
 
+@InputType('DishChoiceInputType', { isAbstract: true })
+@ObjectType()
+class DishChoice {
+  @Field((type) => String)
+  name: string;
+  @Field((type) => Int, { nullable: true })
+  extra?: number;
+}
+
 @InputType('DishOptionInputType', { isAbstract: true })
 @ObjectType()
 class DishOption {
   @Field((type) => String)
   name: string;
-  @Field((type) => [String], { nullable: true })
-  choice?: string[];
-  @Field((type) => Int)
-  extra: number;
+  @Field((type) => [DishChoice], { nullable: true })
+  choice?: DishChoice[];
+  @Field((type) => Int, { nullable: true })
+  extra?: number;
 }
 
 @InputType('DishInputType', { isAbstract: true })
@@ -51,6 +60,7 @@ export class Dish extends CoreEntity {
 
   @Field((type) => [DishOption], { nullable: true })
   @Column({ type: 'json', nullable: true })
-  // type: 'json' : 엔티티를 새로 안 만들고 데이터 저장하기
+  // type: 'json' : to save data without entity or table
+  // json type is supported by mySql and pg
   options?: DishOption[];
 }
