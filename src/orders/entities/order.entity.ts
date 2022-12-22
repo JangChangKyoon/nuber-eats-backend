@@ -17,6 +17,7 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  RelationId,
 } from 'typeorm';
 import { OrderItem } from './order-item.entity';
 
@@ -29,7 +30,7 @@ export enum OrderStatus { // for DB
 
 registerEnumType(OrderStatus, { name: 'OrderStatus' }); // for gql
 
-@InputType('OrderInputType', { isAbstract: true })
+@InputType('OrderInputType', { isAbstract: true }) // abstract로 설정하면 inputType으로 변환이 가능
 @ObjectType()
 @Entity()
 export class Order extends CoreEntity {
@@ -40,12 +41,18 @@ export class Order extends CoreEntity {
   })
   customer?: User;
 
+  @RelationId((order: Order) => order.customer)
+  customerId: number;
+
   @Field((type) => User, { nullable: true })
   @ManyToOne((type) => User, (user) => user.rides, {
     onDelete: 'SET NULL',
     nullable: true,
   })
   driver?: User;
+
+  @RelationId((order: Order) => order.driver)
+  driverId: number;
 
   @Field((type) => Restaurant, { nullable: true })
   @ManyToOne((type) => Restaurant, (restaurant) => restaurant.orders, {
