@@ -18,10 +18,10 @@ export class OrderItemOption {
 @Entity()
 export class OrderItem extends CoreEntity {
   @Field((type) => Dish)
-  @ManyToOne((type) => Dish, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne((type) => Dish, { nullable: true, onDelete: 'CASCADE' }) //order은 dish와 dishoptions를 전부 저장할 수 없으므로, 주문 아이템 entity를 따로 만든다.
   dish: Dish;
 
   @Field((type) => [OrderItemOption], { nullable: true })
-  @Column({ type: 'json', nullable: true })
-  options?: OrderItemOption[];
+  @Column({ type: 'json', nullable: true }) //relation을 설정하면 수정할 때마다 과거 order/dish가 수정되는데, type:json으로 설정하면 relation 없어짐. db JSON.stringfy로  JSON 객체를 저장하는 것.
+  options?: OrderItemOption[]; //json은 order이 추가할 때 한번 생성되고 저장됨, relation 없음.
 }

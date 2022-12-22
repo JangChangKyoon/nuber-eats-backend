@@ -77,6 +77,7 @@ import { OrderItem } from './orders/entities/order-item.entity';
       driver: ApolloDriver,
       autoSchemaFile: true, // 메모리에 저장 //join(process.cwd(), 'src/schema.gql'),// 경로에 저장
       context: ({ req }) => ({ user: req['user'] }), // set in jwt.middleware ,imported in users.resolver
+      //미들웨어에서 집어넣은 user entity를 graphql 컨텍스트로 보냄(context.user)
     }),
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
@@ -99,6 +100,8 @@ export class AppModule implements NestModule {
     consumer
       .apply(JwtMiddleware)
       .forRoutes({ path: '/graphql', method: RequestMethod.ALL });
+    //if JwtMiddleware is a function, u can use it in main.ts as app.use(JwtMiddleware)
+    //JwtMiddleware를 모든 경로의 모든 메소드에 적용시킴
   }
 }
 
