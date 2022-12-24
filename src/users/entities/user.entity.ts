@@ -27,7 +27,7 @@ registerEnumType(UserRole, { name: 'UserRole' }); // for gql
 @ObjectType() // in gql designates each type with below @Field
 @Entity()
 export class User extends CoreEntity {
-  @Column()
+  @Column({ unique: true })
   @Field((type) => String) //gql with @ObjectType
   @IsEmail()
   email: string;

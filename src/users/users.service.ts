@@ -126,6 +126,7 @@ export class UsersService {
       if (email) {
         user.email = email;
         user.verified = false;
+        await this.verifications.delete({ user: { id: user.id } }); // oneToOne 관계이므로 이전에 가졌던 verification을 지우도록함
         const verification = await this.verifications.save(
           this.verifications.create({ user }),
         );
