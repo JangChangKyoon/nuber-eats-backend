@@ -13,9 +13,15 @@ jest.mock('got', () => {
 
 const GRAPHQL_ENDPOINT = '/graphql'; // playground 역할
 
+const testUser = {
+  email: 'nico@las.com',
+  password: '12345',
+};
+
 jest.setTimeout(40000); // this sets default timeout limit
 describe('UserModule (e2e)', () => {
   let app: INestApplication;
+  let jwtToken: string;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -56,8 +62,8 @@ describe('UserModule (e2e)', () => {
           query: `
           mutation {
             createAccount(input: {
-              email:"${EMAIL}",
-              password:"12345",
+              email:"${testUser.email}",
+              password:"${testUser.password}",
               role:Owner
             }) {
               ok
@@ -81,8 +87,8 @@ describe('UserModule (e2e)', () => {
           query: `
           mutation {
             createAccount(input: {
-              email:"${EMAIL}",
-              password:"12345",
+              email:"${testUser.email}",
+              password:"${testUser.password}",
               role:Owner
             }) {
               ok
@@ -101,6 +107,68 @@ describe('UserModule (e2e)', () => {
             // Equual로 하면 일일이 위처럼 다 적을 필요없음
             expect.any(String),
           );
+        });
+    });
+  });
+
+  describe('login', () => {
+    it('should login with correct credentials', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+          mutation {
+            login(input:{
+              email:"${testUser.email}",
+              password:"${testUser.password}",
+            }) {
+              ok
+              error
+              token
+            }
+          }
+        `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: { login }, // 아래 expect를 더 간단히 쓰려구, res.body.data.createAccount.error를 아래처럼 축약가능
+            },
+          } = res;
+          expect(login.ok).toBe(true);
+          expect(login.error).toBe(null);
+          expect(login.token).toEqual(expect.any(String));
+          jwtToken = login.token; // 다른 request에 사용하기 위해 위 모듈변수에 저장해둠
+        });
+    });
+    it('should not be able to login with wrong credentials', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+          mutation {
+            login(input:{
+              email:"${testUser.email}",
+              password:"xxx",
+            }) {
+              ok
+              error
+              token
+            }
+          }
+        `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: { login },
+            },
+          } = res;
+          expect(login.ok).toBe(false);
+          expect(login.error).toBe('Wrong Password');
+          expect(login.token).toBe(null);
         });
     });
   });
