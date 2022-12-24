@@ -4,8 +4,16 @@ import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { DataSource } from 'typeorm';
 
+jest.mock('got', () => {
+  // 실제 mailgun이 계속 실행되는 것을 막으려구
+  return {
+    post: jest.fn(),
+  };
+});
+
 const GRAPHQL_ENDPOINT = '/graphql'; // playground 역할
 
+jest.setTimeout(40000); // this sets default timeout limit
 describe('UserModule (e2e)', () => {
   let app: INestApplication;
 
@@ -31,6 +39,11 @@ describe('UserModule (e2e)', () => {
     await connection.dropDatabase(); // 테스트 끝나면 디비 지우기
     await connection.destroy();
     await app.close(); // test끝나고 app을 종료시키기
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({});
+      }, 15000); // put whatever number base on your test time
+    });
   });
 
   describe('createAccount', () => {
@@ -61,6 +74,34 @@ describe('UserModule (e2e)', () => {
         });
     });
 
-    // it.todo('should fail if account already exists');
+    it('should fail if account already exists', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+          mutation {
+            createAccount(input: {
+              email:"${EMAIL}",
+              password:"12345",
+              role:Owner
+            }) {
+              ok
+              error
+            }
+          }
+        `,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.createAccount.ok).toBe(false);
+          expect(res.body.data.createAccount.error).toBe(
+            'There is a user with that email already',
+          );
+          expect(res.body.data.createAccount.error).toEqual(
+            // Equual로 하면 일일이 위처럼 다 적을 필요없음
+            expect.any(String),
+          );
+        });
+    });
   });
 });
