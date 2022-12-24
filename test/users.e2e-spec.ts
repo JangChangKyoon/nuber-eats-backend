@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { ConsoleLogger, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { User } from 'src/users/entities/user.entity';
 
 jest.mock('got', () => {
   // 실제 mailgun이 계속 실행되는 것을 막으려구
@@ -14,13 +16,14 @@ jest.mock('got', () => {
 const GRAPHQL_ENDPOINT = '/graphql'; // playground 역할
 
 const testUser = {
-  email: 'nico@las.com',
+  email: 'jang@jang.ok',
   password: '12345',
 };
 
 jest.setTimeout(40000); // this sets default timeout limit
 describe('UserModule (e2e)', () => {
   let app: INestApplication;
+  let usersRepository: Repository<User>;
   let jwtToken: string;
 
   beforeAll(async () => {
@@ -29,6 +32,7 @@ describe('UserModule (e2e)', () => {
     }).compile();
 
     app = module.createNestApplication();
+    usersRepository = module.get<Repository<User>>(getRepositoryToken(User));
     await app.init();
   });
 
@@ -74,7 +78,7 @@ describe('UserModule (e2e)', () => {
         })
         .expect(200)
         .expect((res) => {
-          console.log(res.body);
+          // console.log(res.body);
           expect(res.body.data.createAccount.ok).toBe(true);
           expect(res.body.data.createAccount.error).toBe(null);
         });
@@ -169,6 +173,74 @@ describe('UserModule (e2e)', () => {
           expect(login.ok).toBe(false);
           expect(login.error).toBe('Wrong Password');
           expect(login.token).toBe(null);
+        });
+    });
+  });
+
+  describe('userProfile', () => {
+    let userId: number;
+    let userEmail: string;
+    beforeAll(async () => {
+      // console.log(await usersRepository.find());
+      const [user] = await usersRepository.find(); // user라는 variable이 있는 배열에서 첫번째 원소만 가져옴
+      userId = user.id;
+      userEmail = user.email;
+      // console.log(userId);
+    });
+    it("should see a user's profile", () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('X-JWT', jwtToken)
+        .send({
+          query: `
+        {
+          userProfile(userId:${userId}){
+            ok
+            error
+            user {
+              email
+            }
+          }
+        }
+        `,
+        })
+
+        .expect(200)
+        .expect((res) => {
+          const {
+            ok,
+            error,
+            user: { email },
+          } = res.body.data.userProfile;
+          // console.log(res);
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(email).toBe(userEmail);
+        });
+    });
+    it('should not find a profile', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('X-JWT', jwtToken)
+        .send({
+          query: `
+        {
+          userProfile(userId:666){
+            ok
+            error
+            user {
+              email
+            }
+          }
+        }
+        `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const { ok, error, user } = res.body.data.userProfile;
+          expect(ok).toBe(false);
+          expect(error).toBe('User Not Found');
+          expect(user).toBe(null);
         });
     });
   });
