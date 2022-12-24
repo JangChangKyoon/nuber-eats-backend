@@ -43,7 +43,7 @@ export class AuthGuard implements CanActivate {
     const gqlContext = GqlExecutionContext.create(context).getContext();
     // http request를 gql로 변환
     // app.module에 설정하고 gql이 request할 때 포착
-    const user = gqlContext['user'].user;
+    const user = gqlContext['user'];
     // console.log('auth');
     // console.log(user);
     // 위 변수가 있다면 유저가 로그인했다는 것임.

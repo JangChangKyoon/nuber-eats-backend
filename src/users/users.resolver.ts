@@ -57,7 +57,7 @@ export class UsersResolver {
   // return context.user;
   //   }
   // }
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   @Query((returns) => User)
   @Role(['Any'])
   me(@AuthUser() authUser: User) {

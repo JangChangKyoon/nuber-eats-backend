@@ -19,10 +19,17 @@ export class JwtMiddleware implements NestMiddleware {
 
       if (typeof decoded === 'object' && decoded.hasOwnProperty('id')) {
         try {
-          const user = await this.userService.findById(decoded['id']);
-          //decoded Object에서 id의 value 값 가져오기
+          // const user = await this.userService.findById(decoded['id']);
+          // req['user'] = user;
+
+          const { user, ok } = await this.userService.findById(decoded['id']);
+          if (ok) {
+            // 그냥저장하면 ok와 user를 같이 출력하니까, user만 걸러서 메모리에 입력되도록
+            req['user'] = user;
+          }
+
+          // decoded Object에서 id의 value 값 가져오기
           // console.log(user);
-          req['user'] = user;
         } catch (e) {}
       }
     }
