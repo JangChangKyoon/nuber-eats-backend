@@ -5,6 +5,7 @@ import { AppModule } from './../src/app.module';
 import { DataSource, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
+import { Verification } from 'src/users/entities/verification.entity';
 
 jest.mock('got', () => {
   // 실제 mailgun이 계속 실행되는 것을 막으려구
@@ -24,6 +25,7 @@ jest.setTimeout(40000); // this sets default timeout limit
 describe('UserModule (e2e)', () => {
   let app: INestApplication;
   let usersRepository: Repository<User>;
+  let verificationsRepository: Repository<Verification>;
   let jwtToken: string;
 
   beforeAll(async () => {
@@ -33,6 +35,9 @@ describe('UserModule (e2e)', () => {
 
     app = module.createNestApplication();
     usersRepository = module.get<Repository<User>>(getRepositoryToken(User));
+    verificationsRepository = module.get<Repository<Verification>>(
+      getRepositoryToken(Verification),
+    );
     await app.init();
   });
 
@@ -338,6 +343,71 @@ describe('UserModule (e2e)', () => {
             me: { email },
           } = res.body.data;
           expect(email).toBe(NEW_EMAIL);
+        });
+    });
+  });
+
+  //-------------------------------------
+  describe('verifyEmail', () => {
+    let verificationCode: string;
+    beforeAll(async () => {
+      const [verification] = await verificationsRepository.find();
+      verificationCode = verification.code;
+    });
+    it('should verify email', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+          mutation {
+            verifyEmail(input:{
+              code:"${verificationCode}"
+            }){
+              ok
+              error
+            }
+          }
+        `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                verifyEmail: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+    it('should fail on verification code not found', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `
+          mutation {
+            verifyEmail(input:{
+              code:"xxxxx"
+            }){
+              ok
+              error
+            }
+          }
+        `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                verifyEmail: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(false);
+          expect(error).toBe('Verification not found.');
         });
     });
   });
