@@ -41,6 +41,7 @@ export class AuthGuard implements CanActivate {
     // http request 가져오기
     // graphQL의 ExcutionContext에서 user 확인
     const gqlContext = GqlExecutionContext.create(context).getContext();
+    console.log(gqlContext);
     // http request를 gql로 변환
     // app.module에 설정하고 gql이 request할 때 포착
     const user = gqlContext['user'];
@@ -48,6 +49,7 @@ export class AuthGuard implements CanActivate {
     // console.log(user);
     // 위 변수가 있다면 유저가 로그인했다는 것임.
     // console.log(user);
+
     if (!user) {
       return false;
       // request can't continue

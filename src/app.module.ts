@@ -14,7 +14,6 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
 import { Restaurant } from './restaurants/entities/restaurant.entity';
 import { User } from './users/entities/user.entity';
 import { JwtModule } from './jwt/jwt.module';
-import { CommonModule } from './common/common.module';
 import { UsersModule } from './users/users.module';
 import { JwtMiddleware } from './jwt/jwt.middleware';
 import { AuthModule } from './auth/auth.module';
@@ -25,6 +24,11 @@ import { Dish } from './restaurants/entities/dish.entity';
 import { OrdersModule } from './orders/orders.module';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
+import { Context } from 'apollo-server-core';
+import { compareSync } from 'bcrypt';
+import { FragmentsOnCompositeTypesRule } from 'graphql';
+
+// const TOKEN_KEY = 'x-jwt';
 
 @Module({
   imports: [
@@ -77,8 +81,45 @@ import { OrderItem } from './orders/entities/order-item.entity';
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true, // 메모리에 저장 //join(process.cwd(), 'src/schema.gql'),// 경로에 저장
-      context: ({ req }) => ({ user: req['user'] }), // set in jwt.middleware ,imported in users.resolver
-      //미들웨어에서 집어넣은 user entity를 graphql 컨텍스트로 보냄(context.user)
+
+      context: ({ req, connectionParams }) => {
+        if (req) {
+          return { user: req['user'] }; // set in jwt.middleware ,imported in users.resolver
+          //미들웨어에서 집어넣은 user entity를 graphql 컨텍스트로 보냄(context.user)
+        } else {
+          // console.log(connectionParams);
+        }
+      },
+      subscriptions: {
+        /* 첫번째 방법
+        'subscriptions-transport-ws': {
+          onConnect: (connectionParams, connection) => {
+            console.log(connectionParams);
+            // console.log(connection);
+            return connectionParams;
+          },
+          onDisconnect: () => {},
+        },
+        */
+
+        /* 권장하는 방법 */
+        'graphql-ws': {
+          // extra : token을 가지고 있으며, 웹소캣 jwt인증할 때 쓰임
+          // connectionParams : extra에 jwt를 넣어주는 역할을 함.
+          onConnect: (context: Context<any>) => {
+            const { connectionParams, extra } = context;
+            extra.token = connectionParams['x-jwt'];
+            console.log(connectionParams); //{connectionParam that is written subscriptionUrl in Altair}
+            // console.log(extra.token); // undefined
+          },
+        },
+      },
+
+      // return { token: req.headers['x-jwt'], user: req['user'] };
+
+      // return { token: connection.context['X-JWT'] };
+
+      // context: ({ req }) => ({ user: req['user'] }),
     }),
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
