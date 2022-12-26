@@ -28,6 +28,8 @@ import { Context } from 'apollo-server-core';
 import { compareSync } from 'bcrypt';
 import { FragmentsOnCompositeTypesRule } from 'graphql';
 import { CommonModule } from './common/common.module';
+import { Payment } from './payments/payment.entity';
+import { PaymentsModule } from './payments/payments.module';
 
 // const TOKEN_KEY = 'x-jwt';
 
@@ -76,6 +78,7 @@ import { CommonModule } from './common/common.module';
         Dish,
         Order,
         OrderItem,
+        Payment,
       ], // 데이터베이스가 entity를 인식할 수 있도록 함.
     }),
     // GraphQL 설정
@@ -142,6 +145,7 @@ import { CommonModule } from './common/common.module';
     UsersModule,
     RestaurantsModule,
     CommonModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],
