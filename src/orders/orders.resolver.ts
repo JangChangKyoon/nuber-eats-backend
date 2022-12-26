@@ -61,18 +61,21 @@ export class OrderResolver {
   @Mutation((returns) => Boolean)
   async potatoReady(@Args('potatoId') potatoId: number) {
     await this.pubSub.publish('hotPotatos', {
-      readyPotato: potatoId, // payload
+      readyPotato: potatoId, // payload 역할
     });
     return true;
   }
 
   @Subscription((returns) => String, {
     filter: ({ readyPotato }, { potatoId }) => {
-      return readyPotato === potatoId;
+      return readyPotato === potatoId; // 데이터 검증하는 역할 true or false return
     },
+    resolve: ({ readyPotato }) =>
+      `Your potato with the id ${readyPotato} is ready!`, // 위 검증 끝나고 output
   })
   @Role(['Any'])
   readyPotato(@Args('potatoId') potatoId: number) {
+    // variable 역할
     return this.pubSub.asyncIterator('hotPotatos');
   }
 }
