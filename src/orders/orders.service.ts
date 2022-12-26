@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PubSub } from 'graphql-subscriptions';
 import {
   NEW_COOKED_ORDER,
+  NEW_ORDER_UPDATE,
   NEW_PENDING_ORDER,
   PUB_SUB,
 } from 'src/common/common.constants';
@@ -260,15 +261,18 @@ export class OrderService {
         id: orderId,
         status,
       });
+
+      const newOrder = { ...order, status }; //...order은 order field 모두를 가져오기 위해
       if (user.role === UserRole.Owner) {
         // 아래 trigger의 조건을 설정
         if (status === OrderStatus.Cooked) {
           await this.pubSub.publish(NEW_COOKED_ORDER, {
             // driver에게 tirgger 촉발
-            cookedOrders: { ...order, status }, //payload ...order은 order field 모두를 가져오기 위해
+            cookedOrders: newOrder, //payload
           });
         }
       }
+      await this.pubSub.publish(NEW_ORDER_UPDATE, { orderUpdates: newOrder });
       return {
         ok: true,
       };
