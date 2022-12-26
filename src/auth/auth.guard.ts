@@ -1,7 +1,9 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
+import { JwtService } from 'src/jwt/jwt.service';
 import { User } from 'src/users/entities/user.entity';
+import { UsersService } from 'src/users/users.service';
 import { AllowedRoles } from './role.decorator';
 
 //인증 절차(authguard)
@@ -14,17 +16,21 @@ import { AllowedRoles } from './role.decorator';
 export class AuthGuard implements CanActivate {
   // CanActivate return only true or false
   // if return true, request continue, nor false
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly jwtService: JwtService,
+    private readonly userService: UsersService,
+  ) {}
   // In order to access the route's role(s) (custom metadata),
   // we'll use the Reflector helper class,
   // which is provided out of the box by the framework
   // and exposed from the @nestjs/core package.
   // https://docs.nestjs.com/guards#putting-it-all-together
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext) {
     const roles = this.reflector.get<AllowedRoles>(
+      'roles',
       // AllowedRoles : from role.decorator
       // reflector : check metadata
-      'roles',
       // 'role' is role.decorator Role's metadata key
       // for importing from resolver decorater @Role(['Delivery])
       context.getHandler(),
@@ -33,6 +39,7 @@ export class AuthGuard implements CanActivate {
     if (!roles) {
       return true;
       // roles가 없다면 metadata가 없다는 것이니까 public(권한없어도 됨)을 의미함
+      // role decoration setMatadate 참고
 
       // role is undefined, canAcitve return true
       // no metadata return true
@@ -41,8 +48,26 @@ export class AuthGuard implements CanActivate {
     // http request 가져오기
     // graphQL의 ExcutionContext에서 user 확인
     const gqlContext = GqlExecutionContext.create(context).getContext();
-    console.log(gqlContext);
-    // http request를 gql로 변환
+    // console.log(gqlContext.token);
+
+    const token = gqlContext.token;
+    if (token) {
+      const decoded = this.jwtService.verify(token.toString()); // authentication
+      if (typeof decoded === 'object' && decoded.hasOwnProperty('id')) {
+        const { user } = await this.userService.findById(decoded['id']);
+        if (user) {
+          gqlContext['user'] = user; // context에 user를 입력
+          if (roles.includes('Any')) {
+            return true;
+          }
+          return roles.includes(user.role); // true를 반환하여 resolve에 접근 가능하도록 한다.
+        }
+      }
+    }
+    return false;
+
+    /*
+        // http request를 gql로 변환
     // app.module에 설정하고 gql이 request할 때 포착
     const user = gqlContext['user'];
     // console.log('auth');
@@ -55,7 +80,7 @@ export class AuthGuard implements CanActivate {
       // request can't continue
     }
 
-    /* 이하부터는 metadata도 있고, 유저도 로그인이 되었을 경우 */
+    // 이하부터는 metadata도 있고, 유저도 로그인이 되었을 경우 
     if (roles.includes('Any')) {
       return true;
       // request continue
@@ -64,5 +89,6 @@ export class AuthGuard implements CanActivate {
 
     return roles.includes(user.role);
     // return true of false whether roles include user.role
+    */
   }
 }

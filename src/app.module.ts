@@ -27,6 +27,7 @@ import { OrderItem } from './orders/entities/order-item.entity';
 import { Context } from 'apollo-server-core';
 import { compareSync } from 'bcrypt';
 import { FragmentsOnCompositeTypesRule } from 'graphql';
+import { CommonModule } from './common/common.module';
 
 // const TOKEN_KEY = 'x-jwt';
 
@@ -83,12 +84,13 @@ import { FragmentsOnCompositeTypesRule } from 'graphql';
       autoSchemaFile: true, // 메모리에 저장 //join(process.cwd(), 'src/schema.gql'),// 경로에 저장
 
       context: ({ req, connectionParams }) => {
-        if (req) {
-          return { user: req['user'] }; // set in jwt.middleware ,imported in users.resolver
-          //미들웨어에서 집어넣은 user entity를 graphql 컨텍스트로 보냄(context.user)
-        } else {
-          // console.log(connectionParams);
-        }
+        const TOKEN_KEY = 'x-jwt';
+
+        return {
+          token: req ? req.headers[TOKEN_KEY] : connectionParams[TOKEN_KEY],
+        };
+        // set in jwt.middleware ,imported in users.resolver
+        //미들웨어에서 집어넣은 user entity를 graphql 컨텍스트로 보냄(context.user)
       },
       subscriptions: {
         /* 첫번째 방법
@@ -103,16 +105,22 @@ import { FragmentsOnCompositeTypesRule } from 'graphql';
         */
 
         /* 권장하는 방법 */
-        'graphql-ws': {
+        'subscriptions-transport-ws': true,
+
+        'graphql-ws': true,
+
+        /*
+        {
           // extra : token을 가지고 있으며, 웹소캣 jwt인증할 때 쓰임
           // connectionParams : extra에 jwt를 넣어주는 역할을 함.
           onConnect: (context: Context<any>) => {
-            const { connectionParams, extra } = context;
-            extra.token = connectionParams['x-jwt'];
-            console.log(connectionParams); //{connectionParam that is written subscriptionUrl in Altair}
+            // const { connectionParams, extra } = context;
+            // extra.token = connectionParams['x-jwt'];
+            // console.log(connectionParams); //{connectionParam that is written subscriptionUrl in Altair}
             // console.log(extra.token); // undefined
           },
         },
+        */
       },
 
       // return { token: req.headers['x-jwt'], user: req['user'] };
@@ -137,15 +145,17 @@ import { FragmentsOnCompositeTypesRule } from 'graphql';
   controllers: [],
   providers: [],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(JwtMiddleware)
-      .forRoutes({ path: '/graphql', method: RequestMethod.ALL });
-    //if JwtMiddleware is a function, u can use it in main.ts as app.use(JwtMiddleware)
-    //JwtMiddleware를 모든 경로의 모든 메소드에 적용시킴
-  }
-}
+export class AppModule {}
+
+// export class AppModule implements NestModule {
+//   configure(consumer: MiddlewareConsumer) {
+//     consumer
+//       .apply(JwtMiddleware)
+//       .forRoutes({ path: '/graphql', method: RequestMethod.ALL });
+//     //if JwtMiddleware is a function, u can use it in main.ts as app.use(JwtMiddleware)
+//     //JwtMiddleware를 모든 경로의 모든 메소드에 적용시킴
+//   }
+// }
 
 // 환경변수 작동 확인
 // console.log('app.module');
