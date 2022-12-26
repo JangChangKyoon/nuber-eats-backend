@@ -1,7 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PubSub } from 'graphql-subscriptions';
-import { NEW_PENDING_ORDER, PUB_SUB } from 'src/common/common.constants';
+import {
+  NEW_COOKED_ORDER,
+  NEW_PENDING_ORDER,
+  PUB_SUB,
+} from 'src/common/common.constants';
 import { Dish } from 'src/restaurants/entities/dish.entity';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { User, UserRole } from 'src/users/entities/user.entity';
@@ -252,12 +256,19 @@ export class OrderService {
           error: "You can't do that.",
         };
       }
-      await this.orders.save([
-        {
-          id: orderId,
-          status,
-        },
-      ]);
+      await this.orders.save({
+        id: orderId,
+        status,
+      });
+      if (user.role === UserRole.Owner) {
+        // 아래 trigger의 조건을 설정
+        if (status === OrderStatus.Cooked) {
+          await this.pubSub.publish(NEW_COOKED_ORDER, {
+            // driver에게 tirgger 촉발
+            cookedOrders: { ...order, status }, //payload ...order은 order field 모두를 가져오기 위해
+          });
+        }
+      }
       return {
         ok: true,
       };
