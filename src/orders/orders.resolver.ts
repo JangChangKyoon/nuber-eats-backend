@@ -15,6 +15,7 @@ import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
 import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 import { OrderUpdatesInput } from './dtos/order-updates.dto';
+import { TakeOrderInput, TakeOrderOutput } from './dtos/take-order.dto';
 import { Order } from './entities/order.entity';
 import { OrderService } from './orders.service';
 
@@ -85,7 +86,7 @@ export class OrderResolver {
       { input }: { input: OrderUpdatesInput },
       { user }: { user: User },
     ) => {
-      // console.log(order, input, user);
+      console.log(order, input, user);
       if (
         order.driverId !== user.id && // 관련자가 아니면 listening을 못하도록
         order.customerId !== user.id &&
@@ -100,6 +101,15 @@ export class OrderResolver {
   @Role(['Any'])
   orderUpdates(@Args('input') orderUpdatesInput: OrderUpdatesInput) {
     return this.pubSub.asyncIterator(NEW_ORDER_UPDATE);
+  }
+
+  @Mutation((returns) => TakeOrderOutput)
+  @Role(['Delivery'])
+  takeOrder(
+    @AuthUser() driver: User,
+    @Args('input') takeOrderInput: TakeOrderInput,
+  ): Promise<TakeOrderOutput> {
+    return this.ordersService.takeOrder(driver, takeOrderInput);
   }
 
   /*
