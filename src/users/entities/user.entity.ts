@@ -14,7 +14,7 @@ import { boolean, string } from 'joi';
 import { IsBoolean, IsString, Length, IsOptional } from 'class-validator';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { Order } from 'src/orders/entities/order.entity';
-import { Payment } from 'src/payments/payment.entity';
+import { Payment } from 'src/payments/entities/payment.entity';
 
 export enum UserRole { // for DB
   Client = 'Client',

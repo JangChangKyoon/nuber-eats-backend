@@ -28,7 +28,7 @@ import { Context } from 'apollo-server-core';
 import { compareSync } from 'bcrypt';
 import { FragmentsOnCompositeTypesRule } from 'graphql';
 import { CommonModule } from './common/common.module';
-import { Payment } from './payments/payment.entity';
+import { Payment } from './payments/entities/payment.entity';
 import { PaymentsModule } from './payments/payments.module';
 
 // const TOKEN_KEY = 'x-jwt';
