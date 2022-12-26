@@ -216,11 +216,11 @@ export class OrderService {
     { id: orderId, status }: EditOrderInput,
   ): Promise<EditOrderOutput> {
     try {
-      const order = await this.orders.findOne({
-        where: { id: orderId },
-
-        relations: ['restaurant'],
-      });
+      // const order = await this.orders.findOne({
+      //   where: { id: orderId },
+      //   relations: ['restaurant'],
+      // });
+      const order = await this.orders.findOne({ where: { id: orderId } });
       if (!order) {
         return {
           ok: false,
