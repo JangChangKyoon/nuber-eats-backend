@@ -1,4 +1,4 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, InputType, ObjectType } from '@nestjs/graphql';
 import { IsString, Length, IsNumber, IsDate } from 'class-validator';
 import {
   CreateDateColumn,
@@ -12,7 +12,7 @@ import { isDate } from 'util/types';
 export class CoreEntity {
   @PrimaryGeneratedColumn()
   @IsNumber()
-  @Field((type) => String)
+  @Field((type) => Number)
   id: number;
 
   @CreateDateColumn()

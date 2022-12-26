@@ -85,6 +85,7 @@ export class OrderResolver {
       { input }: { input: OrderUpdatesInput },
       { user }: { user: User },
     ) => {
+      // console.log(order, input, user);
       if (
         order.driverId !== user.id && // 관련자가 아니면 listening을 못하도록
         order.customerId !== user.id &&
@@ -92,6 +93,7 @@ export class OrderResolver {
       ) {
         return false;
       }
+
       return order.id === input.id; // payload의 id와 아래 args에서 가져온 id를 비교하여 주문한 order만 listening
     },
   })
