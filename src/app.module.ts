@@ -141,6 +141,7 @@ import { CommonModule } from './common/common.module';
     AuthModule, // static module : 어떠한 설정도 적용되어 있지 않은 모듈
     UsersModule,
     RestaurantsModule,
+    CommonModule,
   ],
   controllers: [],
   providers: [],
