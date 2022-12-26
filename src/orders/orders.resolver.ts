@@ -3,7 +3,7 @@ import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { AuthUser } from 'src/auth/auth-user.decorator';
 import { Role } from 'src/auth/role.decorator';
-import { PUB_SUB } from 'src/common/common.constants';
+import { NEW_PENDING_ORDER, PUB_SUB } from 'src/common/common.constants';
 import { User } from 'src/users/entities/user.entity';
 import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
 import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
@@ -55,27 +55,45 @@ export class OrderResolver {
     return this.ordersService.editOrder(user, editOrderInput);
   }
 
+  @Subscription((returns) => Order, {
+    filter: ({ pendingOrders: { ownerId } }, _, { user }) => {
+      return ownerId === user.id;
+    },
+    resolve: ({ pendingOrders: { order } }) => order,
+  })
+  // payload는 service에서 가져오는 Order
+  @Role(['Owner'])
+  pendingOrders() {
+    return this.pubSub.asyncIterator(NEW_PENDING_ORDER); // trigger : service에서 페이로드를 가져오는 역할
+  }
+
   /*
   hotPodtatos : trigger that returns value in @Subscription
   */
-  @Mutation((returns) => Boolean)
-  async potatoReady(@Args('potatoId') potatoId: number) {
-    await this.pubSub.publish('hotPotatos', {
-      readyPotato: potatoId, // payload 역할
-    });
-    return true;
-  }
+  // @Mutation((returns) => Boolean)
+  // async potatoReady(@Args('potatoId') potatoId: number) {
+  //   await this.pubSub.publish('hotPotatos', {
+  //     readyPotato: potatoId, // payload 역할
+  //   });
+  //   return true;
+  // }
 
-  @Subscription((returns) => String, {
-    filter: ({ readyPotato }, { potatoId }) => {
-      return readyPotato === potatoId; // 데이터 검증하는 역할 true or false return
-    },
-    resolve: ({ readyPotato }) =>
-      `Your potato with the id ${readyPotato} is ready!`, // 위 검증 끝나고 output
-  })
-  @Role(['Any'])
-  readyPotato(@Args('potatoId') potatoId: number) {
-    // variable 역할
-    return this.pubSub.asyncIterator('hotPotatos');
-  }
+  // @Subscription(returns => Order, {
+  //   filter: (payload, _, context) => {
+  //     console.log(payload, context);
+  //     return true;
+  //   },
+  // })
+  // @Subscription((returns) => String, {
+  //   filter: ({ readyPotato }, { potatoId }) => {
+  //     return readyPotato === potatoId; // 데이터 검증하는 역할 true or false return
+  //   },
+  //   resolve: ({ readyPotato }) =>
+  //     `Your potato with the id ${readyPotato} is ready!`, // 위 검증 끝나고 output
+  // })
+  // @Role(['Any'])
+  // readyPotato(@Args('potatoId') potatoId: number) {
+  //   // variable 역할
+  //   return this.pubSub.asyncIterator('hotPotatos');
+  // }
 }
