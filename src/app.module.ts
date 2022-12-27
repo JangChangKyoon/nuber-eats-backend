@@ -30,6 +30,7 @@ import { FragmentsOnCompositeTypesRule } from 'graphql';
 import { CommonModule } from './common/common.module';
 import { Payment } from './payments/entities/payment.entity';
 import { PaymentsModule } from './payments/payments.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // const TOKEN_KEY = 'x-jwt';
 
@@ -132,6 +133,7 @@ import { PaymentsModule } from './payments/payments.module';
 
       // context: ({ req }) => ({ user: req['user'] }),
     }),
+    ScheduleModule.forRoot(),
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
     }), // Dynamic Module : 설정이 적용되어 있거나 설정을 적용할 수 있는 모듈
