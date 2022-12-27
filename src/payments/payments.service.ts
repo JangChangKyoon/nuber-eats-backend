@@ -23,8 +23,8 @@ export class PaymentService {
     private readonly payments: Repository<Payment>,
     @InjectRepository(Restaurant)
     private readonly restaurants: Repository<Restaurant>,
-    private schedulerRegistry: SchedulerRegistry,
-  ) {}
+  ) // private schedulerRegistry: SchedulerRegistry,
+  {}
   async createPayment(
     owner: User,
     { transactionId, restaurantId }: CreatePaymentInput,
@@ -52,6 +52,11 @@ export class PaymentService {
           restaurant,
         }),
       );
+      restaurant.isPromoted = true;
+      const date = new Date();
+      date.setDate(date.getDate() + 7);
+      restaurant.promotedUntil = date;
+      this.restaurants.save(restaurant);
       return {
         ok: true,
       };
@@ -82,15 +87,15 @@ export class PaymentService {
     }
   }
 
-  @Cron('30 * * * * *', {
-    name: 'myJob',
-  })
-  checkForPayments() {
-    console.log("@Cron('30 * * * * *'");
-    const job = this.schedulerRegistry.getCronJob('myJob');
-    // console.log(job);
-    job.stop();
-  }
+  // @Cron('30 * * * * *', {
+  //   name: 'myJob',
+  // })
+  // checkForPayments() {
+  //   console.log("@Cron('30 * * * * *'");
+  //   const job = this.schedulerRegistry.getCronJob('myJob');
+  //   // console.log(job);
+  //   job.stop();
+  // }
 
   //   @Interval(5000)
   //   checkForPaymentsI() {

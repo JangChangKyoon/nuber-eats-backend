@@ -192,6 +192,9 @@ export class RestaurantService {
           // 엔티티를 쿼리할 조건
           category: { id: category.id },
         },
+        order: {
+          isPromoted: 'DESC',
+        },
         take: 25, // 가져올 엔티티 갯수
         skip: (page - 1) * 25, // 스킵할 엔티티 갯수
       });
@@ -216,6 +219,9 @@ export class RestaurantService {
       const [restaurants, totalResults] = await this.restaurants.findAndCount({
         skip: (page - 1) * 25,
         take: 25,
+        order: {
+          isPromoted: 'DESC',
+        },
       });
       return {
         ok: true,
