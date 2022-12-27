@@ -8,7 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import {
   CreatePaymentInput,
   CreatePaymentOuput,
@@ -22,9 +22,8 @@ export class PaymentService {
     @InjectRepository(Payment)
     private readonly payments: Repository<Payment>,
     @InjectRepository(Restaurant)
-    private readonly restaurants: Repository<Restaurant>,
-  ) // private schedulerRegistry: SchedulerRegistry,
-  {}
+    private readonly restaurants: Repository<Restaurant>, // private schedulerRegistry: SchedulerRegistry,
+  ) {}
   async createPayment(
     owner: User,
     { transactionId, restaurantId }: CreatePaymentInput,
@@ -85,6 +84,20 @@ export class PaymentService {
         error: 'Could not load payments.',
       };
     }
+  }
+
+  // 날짜가 만료되었음에도 여전히 promote되고 있는 restaurant들을 체크
+  @Interval(2000)
+  async checkPromotedRestaurants() {
+    const restaurants = await this.restaurants.find({
+      where: { isPromoted: true, promotedUntil: LessThan(new Date()) },
+    });
+    console.log(restaurants);
+    restaurants.forEach(async (restaurant) => {
+      restaurant.isPromoted = false;
+      restaurant.promotedUntil = null;
+      await this.restaurants.save(restaurant);
+    });
   }
 
   // @Cron('30 * * * * *', {
